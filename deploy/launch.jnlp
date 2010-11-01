@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<jnlp codebase="http://sites.google.com/site/pdfscissors/" href="launch.jnlp" spec="1.0+">
+    <information>
+        <title>PDF Scissors</title>
+        <vendor>PDF Scisssors</vendor>
+        <homepage href="http://www.pdfscissors.com/"/>
+        <description>Crops pdf for ebook readers.</description>
+        <description kind="short">Crops pdf for ebook readers</description>
+        <icon href="http://sites.google.com/site/pdfscissors/pdfscissors.png" kind="splash"/>
+        <icon href="http://sites.google.com/site/pdfscissors/pdfscissors.png" kind="default" width="32" height="32" />
+    </information>
+    <resources>
+        <j2se version="1.5+"/>
+        <jar eager="true" href="http://sites.google.com/site/pdfscissors/pdfscissors.jar" main="true"/>        
+    </resources>
+	<security>
+<all-permissions/>
+</security>
+    <application-desc main-class="bd.amazed.pdfscissors.main.PdfscissorsMain">
+    </application-desc>
+</jnlp>
