@@ -31,18 +31,24 @@ public class PdfCropper {
 
     public BufferedImage getImage(int pageNumber) throws PdfException {
         //TODO validate page number
-        BufferedImage pageImage = getPdfDecoder().getPageAsImage(pageNumber);
-        BufferedImage pageImage2 = getPdfDecoder().getPageAsImage(pageNumber + 1);
-        if (pageImage != null && pageImage2 != null) {
-        float alpha = 0.5f;
-        int type = AlphaComposite.SRC_OVER;
-        AlphaComposite composite = AlphaComposite.getInstance(type, alpha);
-        Graphics2D g = (Graphics2D) pageImage2.getGraphics();
-        g.setComposite(composite);
-        g.drawImage(pageImage, 0, 0, null);
+        int endPage = pageNumber + 4;
+        BufferedImage lastPage = getPdfDecoder().getPageAsImage(endPage);
+
+        if (lastPage != null) {
+            for (int i = endPage; i >= 1; i--) {
+                BufferedImage pageImage = getPdfDecoder().getPageAsImage(i);
+                if (pageImage != null) {
+                float alpha = 0.5f;
+                int type = AlphaComposite.SRC_OVER;
+                AlphaComposite composite = AlphaComposite.getInstance(type, alpha);
+                Graphics2D g = (Graphics2D) lastPage.getGraphics();
+                g.setComposite(composite);
+                g.drawImage(pageImage, 0, 0, null);
+                }
+            }
         }
 
-        return pageImage2;
+        return lastPage;
     }
 
     public void close() {

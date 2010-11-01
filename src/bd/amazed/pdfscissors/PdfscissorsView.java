@@ -9,8 +9,13 @@ import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.WindowEvent;
 import java.beans.PropertyChangeEvent;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jdesktop.application.Action;
 import org.jdesktop.application.ResourceMap;
 import org.jdesktop.application.SingleFrameApplication;
@@ -23,7 +28,6 @@ import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.EventObject;
-import java.util.concurrent.TimeUnit;
 import javax.swing.Timer;
 import javax.swing.Icon;
 import javax.swing.JDialog;
@@ -509,8 +513,8 @@ public class PdfscissorsView extends FrameView {
        }
     }
 
-    private void handleException(String userFriendlyMessage, PdfException ex) {
-        JOptionPane.showMessageDialog(getFrame(), userFriendlyMessage + "\nDetails:" + ex);
+    private void handleException(String userFriendlyMessage, Throwable ex) {
+        JOptionPane.showMessageDialog(getFrame(), userFriendlyMessage + "\n\n\nTechnical details:\n--------------------------------\n" + ex);
         ex.printStackTrace();
     }
 
@@ -545,19 +549,35 @@ public class PdfscissorsView extends FrameView {
 
         @Override
         protected void succeeded(BufferedImage image) {
-            super.succeeded(image);
-            if (image == null) {
-                message("Ups... Failed to extract pdf content. Possibly a bad or password protected pdf.");
-            }
+            super.succeeded(image);           
             defaultPdfPanel.setImage(image);
+            scrollPanel.revalidate();
         }
 
         @Override
         protected void finished() {
             super.finished();
-            scrollPanel.revalidate();
+            // Save the previous coordinates
+            double oldZoom = 100;
+            double newZoom = 50;
+            Rectangle oldView = scrollPanel.getViewport().getViewRect();
+            defaultPdfPanel.setZoomFactor(newZoom / oldZoom);
+            Point newViewPos = new Point();
+            newViewPos.x = Math.max(0, (int) ((oldView.x + oldView.width / 2) * newZoom / oldZoom - oldView.width / 2));
+            newViewPos.y = Math.max(0, (int) ((oldView.y + oldView.height / 2) * newZoom / oldZoom - oldView.height / 2));
+            scrollPanel.getViewport().setViewPosition(newViewPos);
+            scrollPanel.revalidate();            
             PdfscissorsApp.debug("Extracting pdf image done!!");
         }
+
+        @Override
+        protected void failed(Throwable cause) {
+            defaultPdfPanel.setImage(null);
+            scrollPanel.revalidate();
+            handleException("Ups... Failed to extract pdf content.\nPossibly a bad or password protected pdf.", cause);
+        }
+
+
     }
    
 }

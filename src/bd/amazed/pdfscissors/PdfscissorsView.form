@@ -16,7 +16,7 @@
                   <Component id="jToolBar2" min="-2" pref="343" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
                   <Component id="jToolBar3" min="-2" pref="344" max="-2" attributes="0"/>
-                  <EmptySpace pref="108" max="32767" attributes="0"/>
+                  <EmptySpace pref="120" max="32767" attributes="0"/>
               </Group>
               <Component id="scrollPanel" alignment="0" pref="902" max="32767" attributes="0"/>
           </Group>
