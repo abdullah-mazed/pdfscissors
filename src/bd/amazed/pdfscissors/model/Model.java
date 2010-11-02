@@ -2,6 +2,7 @@ package bd.amazed.pdfscissors.model;
 
 import java.awt.Dimension;
 import java.awt.Image;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -118,6 +119,9 @@ public class Model {
 		return scaledPreviewImage;
 	}	
 	
+	public void addCrop(Rectangle rect) {
+		
+	}
 
 	protected void fireNewPdf() {
 		for (ModelListener listener : modelListeners) {

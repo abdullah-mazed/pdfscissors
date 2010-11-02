@@ -28,9 +28,14 @@ import java.awt.event.WindowAdapter;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeListener;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.util.Enumeration;
 import java.util.EventObject;
 
+import javax.imageio.ImageIO;
+import javax.swing.AbstractButton;
+import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.SwingWorker;
@@ -49,6 +54,7 @@ import org.jpedal.exception.PdfException;
 import javax.swing.JScrollPane;
 import java.util.Vector;
 import javax.swing.JToolBar;
+import javax.swing.JToggleButton;
 
 /**
  * @author Gagan
@@ -65,13 +71,18 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JScrollPane scrollPanel = null;
 	/** Panel containing PdfPanels. */
 	private JPanel pdfPanelsContainer = null;
-
+	private ButtonGroup rectButtonGroup = null;  //  @jve:decl-index=0:
+	/** Contains all components that are disabled until file open.*/
+	private Vector<Component> openFileDependendComponents = null;
 	/**
 	 * Keeps track of already registered listeners. Used to re-register
 	 * listners.
 	 */
 	private Vector<ModelListener> modelRegisteredListeners;
 	private JToolBar toolBar = null;
+	private UIHandler uiHandler = null;
+	private JToggleButton buttonDraw = null;
+	private JToggleButton buttonSelect = null;
 
 	/**
 	 * This is the default constructor
@@ -79,9 +90,21 @@ public class MainFrame extends JFrame implements ModelListener {
 	public MainFrame() {
 		super();
 		modelRegisteredListeners = new Vector<ModelListener>();
+		openFileDependendComponents = new Vector<Component>();
 		initialize();
 		registerComponentsToModel();
+		updateOpenFileDependents();
+		try {
+			URL url = MainFrame.class.getResource("/icon.png");
+			if(url != null) {
+				setIconImage(ImageIO.read(url));
+			}
+		} catch (IOException e) {
+			System.err.println("Failed to get frame icon");
+		}
 	}
+
+	
 
 	/**
 	 * This method initializes this
@@ -91,9 +114,10 @@ public class MainFrame extends JFrame implements ModelListener {
 	private void initialize() {
 
 		this.setSize(800, 600);
+		this.rectButtonGroup = new ButtonGroup();
 		this.setContentPane(getJContentPane());
-		this.setTitle("JFrame");
-
+		this.setTitle("PDF Scissors");
+		this.uiHandler = new UIHandler();
 	}
 
 	private void registerComponentsToModel() {
@@ -124,6 +148,16 @@ public class MainFrame extends JFrame implements ModelListener {
 		model.addListener(this);
 		modelRegisteredListeners.add(this);
 	}
+	
+	/**
+	 * Enable/disable buttons etc which should be disabled when there is no file.
+	 */
+	private void updateOpenFileDependents() {
+		boolean shouldEnable = Model.getInstance().getCurrentFile() != null;
+		for (Component component : openFileDependendComponents) {
+			component.setEnabled(shouldEnable);
+		}
+	}
 
 	/**
 	 * This method initializes jContentPane
@@ -150,7 +184,7 @@ public class MainFrame extends JFrame implements ModelListener {
 			jButton = new JButton("Open"); //a string literal is here only for eclipse visual editor.
 			String imageFile = "/open.png";
 			String text = "Open a pdf file";
-			setButton(jButton, imageFile, text);
+			setButton(jButton, imageFile, text, false);
 			jButton.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
 					openFile();
@@ -161,7 +195,7 @@ public class MainFrame extends JFrame implements ModelListener {
 		return jButton;
 	}
 	
-	private void setButton(JButton button, String imageLocation, String tooltip) {
+	private void setButton(AbstractButton button, String imageLocation, String tooltip, boolean isOpenFileDependent) {
         String imgLocation = imageLocation;
         URL imageURL = MainFrame.class.getResource(imageLocation);
         if (imageURL != null) {                      //image found
@@ -173,6 +207,9 @@ public class MainFrame extends JFrame implements ModelListener {
         }
         button.setToolTipText(tooltip);
         button.setActionCommand(tooltip);
+        if (isOpenFileDependent) {
+        	openFileDependendComponents.add(button);
+        }
     }
 
 	private void openFile() {
@@ -205,7 +242,7 @@ public class MainFrame extends JFrame implements ModelListener {
 
 	private Component getDefaultPdfPanel() {
 		if (defaultPdfPanel == null) {
-			defaultPdfPanel = new PdfPanel();
+			defaultPdfPanel = new PdfPanel(uiHandler);
 		}
 		return defaultPdfPanel;
 	}
@@ -250,10 +287,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	}
 
 	private void handleException(String userFriendlyMessage, Throwable ex) {
-		JOptionPane
-				.showMessageDialog(
-						this,
-						userFriendlyMessage
+		JOptionPane.showMessageDialog(this,userFriendlyMessage
 								+ "\n\n\nTechnical details:\n--------------------------------\n"
 								+ ex);
 		ex.printStackTrace();
@@ -263,10 +297,88 @@ public class MainFrame extends JFrame implements ModelListener {
 		JOptionPane.showMessageDialog(this, string);
 	}
 
+	
+
+	/**
+	 * This method initializes toolBar	
+	 * 	
+	 * @return javax.swing.JToolBar	
+	 */
+	private JToolBar getToolBar() {
+		if (toolBar == null) {
+			toolBar = new JToolBar();
+			toolBar.add(getJButton());
+			toolBar.add(getButtonDraw());
+			toolBar.add(getButtonSelect());
+		}
+		return toolBar;
+	}
+
+	/**
+	 * This method initializes buttonDraw	
+	 * 	
+	 * @return javax.swing.JToggleButton	
+	 */
+	private JToggleButton getButtonDraw() {
+		if (buttonDraw == null) {
+			buttonDraw = new JToggleButton("Draw", true); //selected initially			
+			setButton(buttonDraw, "/draw.png", "Draw an area for cropping.", true);
+			setToggleButtonGroup(buttonDraw, rectButtonGroup);
+			buttonDraw.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					uiHandler.setEditingMode(UIHandler.EDIT_MODE_DRAW);
+				}
+			});
+		}
+		return buttonDraw;
+	}
+
+	/**
+	 * This method initializes buttonSelect	
+	 * 	
+	 * @return javax.swing.JButton	
+	 */
+	private JToggleButton getButtonSelect() {
+		if (buttonSelect == null) {
+			buttonSelect = new JToggleButton("Select");
+			setButton(buttonSelect, "/select.png", "Select and resize an already created crop area.", true);
+			setToggleButtonGroup(buttonSelect, rectButtonGroup);
+			buttonSelect.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					uiHandler.setEditingMode(UIHandler.EDIT_MODE_SELECT);
+				}
+			});
+		}
+		return buttonSelect;
+	}
+	
+	/**
+	 * Ensures other buttons in the group will be unselected when given button is selected.
+	 * @param button
+	 * @param group
+	 */
+	private void setToggleButtonGroup(final JToggleButton button, final ButtonGroup group) {
+		group.add(button);
+		button.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				boolean otherButtonMode = ! button.isSelected();
+				Enumeration<AbstractButton> otherButtons = group.getElements();
+				while(otherButtons.hasMoreElements()) {
+					otherButtons.nextElement().setSelected(otherButtonMode);
+				}
+				
+			}
+		});
+	}
+	
+	
 	@Override
 	public void newPdfLoaded() {
 		debug("listening to new pdf loaded.");
 		getScrollPanel().revalidate();
+		updateOpenFileDependents();
 	}
 
 	@Override
@@ -285,18 +397,6 @@ public class MainFrame extends JFrame implements ModelListener {
 		scrollPanel.getViewport().setViewPosition(newViewPos);
 		scrollPanel.revalidate();
 	}
-
-	/**
-	 * This method initializes toolBar	
-	 * 	
-	 * @return javax.swing.JToolBar	
-	 */
-	private JToolBar getToolBar() {
-		if (toolBar == null) {
-			toolBar = new JToolBar();
-			toolBar.add(getJButton());
-		}
-		return toolBar;
-	}
-
 }
+
+
