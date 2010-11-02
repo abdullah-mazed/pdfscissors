@@ -28,8 +28,10 @@ import java.awt.event.WindowAdapter;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeListener;
 import java.io.File;
+import java.net.URL;
 import java.util.EventObject;
 
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.SwingWorker;
 import javax.swing.Timer;
@@ -46,6 +48,7 @@ import javax.swing.filechooser.FileFilter;
 import org.jpedal.exception.PdfException;
 import javax.swing.JScrollPane;
 import java.util.Vector;
+import javax.swing.JToolBar;
 
 /**
  * @author Gagan
@@ -68,6 +71,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	 * listners.
 	 */
 	private Vector<ModelListener> modelRegisteredListeners;
+	private JToolBar toolBar = null;
 
 	/**
 	 * This is the default constructor
@@ -130,8 +134,8 @@ public class MainFrame extends JFrame implements ModelListener {
 		if (jContentPane == null) {
 			jContentPane = new JPanel();
 			jContentPane.setLayout(new BorderLayout());
-			jContentPane.add(getJButton(), BorderLayout.NORTH);
 			jContentPane.add(getScrollPanel(), BorderLayout.CENTER);
+			jContentPane.add(getToolBar(), BorderLayout.NORTH);
 		}
 		return jContentPane;
 	}
@@ -142,9 +146,11 @@ public class MainFrame extends JFrame implements ModelListener {
 	 * @return javax.swing.JButton
 	 */
 	private JButton getJButton() {
-		if (jButton == null) {
-			jButton = new JButton();
-			jButton.setText("test");
+		if (jButton == null) {			
+			jButton = new JButton("Open"); //a string literal is here only for eclipse visual editor.
+			String imageFile = "/open.png";
+			String text = "Open a pdf file";
+			setButton(jButton, imageFile, text);
 			jButton.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
 					openFile();
@@ -154,6 +160,20 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 		return jButton;
 	}
+	
+	private void setButton(JButton button, String imageLocation, String tooltip) {
+        String imgLocation = imageLocation;
+        URL imageURL = MainFrame.class.getResource(imageLocation);
+        if (imageURL != null) {                      //image found
+            button.setIcon(new ImageIcon(imageURL, tooltip));
+            button.setText(null);
+        } else {                                     //no image found
+            button.setText(tooltip);
+            System.err.println("Resource not found: " + imgLocation);
+        }
+        button.setToolTipText(tooltip);
+        button.setActionCommand(tooltip);
+    }
 
 	private void openFile() {
 		JFileChooser fileChooser = new JFileChooser();
@@ -264,6 +284,19 @@ public class MainFrame extends JFrame implements ModelListener {
 				* newZoomFactor - oldView.height / 2));
 		scrollPanel.getViewport().setViewPosition(newViewPos);
 		scrollPanel.revalidate();
+	}
+
+	/**
+	 * This method initializes toolBar	
+	 * 	
+	 * @return javax.swing.JToolBar	
+	 */
+	private JToolBar getToolBar() {
+		if (toolBar == null) {
+			toolBar = new JToolBar();
+			toolBar.add(getJButton());
+		}
+		return toolBar;
 	}
 
 }
