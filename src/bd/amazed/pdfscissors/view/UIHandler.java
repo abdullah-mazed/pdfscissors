@@ -53,4 +53,39 @@ public class UIHandler {
 	public ArrayList<Rect> getAllRects() {
 		return rects;
 	}
+
+	public void deleteSelected() {
+		if (selectedRect != null) {
+			rects.remove(selectedRect);
+			Rect toDelRect = selectedRect;
+			selectedRect = null;
+			toDelRect.fireEvent(null);
+			
+		}
+	}
+	
+	public int getRectCount() {
+		return rects.size();
+	}
+	
+	public int getIndexOf(Rect rect) {
+		return rects.indexOf(rect);
+	}
+
+	public void deleteAll() {
+		Rect anyRect = null;
+		if (rects.size() > 0) {
+			anyRect = rects.get(0);
+		}
+		rects.clear();
+		if (anyRect != null) {
+			anyRect.fireEvent(null); // if canvas repaints whole area once, that
+										// will do.
+		}
+	}
+
+	public void reset() {
+		deleteAll();
+		selectedRect = null; //we are removing all rects, so all rects listners should vanish too.
+	}
 }

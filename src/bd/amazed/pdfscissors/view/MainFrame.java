@@ -10,6 +10,7 @@ import bd.amazed.pdfscissors.model.TaskPdfOpen;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -48,6 +49,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.ProgressMonitor;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 
 import org.jpedal.exception.PdfException;
@@ -83,6 +86,8 @@ public class MainFrame extends JFrame implements ModelListener {
 	private UIHandler uiHandler = null;
 	private JToggleButton buttonDraw = null;
 	private JToggleButton buttonSelect = null;
+	private JButton buttonDeleteRect = null;
+	private JButton buttonDelAll = null;
 
 	/**
 	 * This is the default constructor
@@ -101,6 +106,12 @@ public class MainFrame extends JFrame implements ModelListener {
 			}
 		} catch (IOException e) {
 			System.err.println("Failed to get frame icon");
+		}
+		
+		try {
+			setDefaultCloseOperation(EXIT_ON_CLOSE);
+		}catch(Throwable e) {
+			System.err.println("Failed to set exit on close." + e);
 		}
 	}
 
@@ -236,6 +247,7 @@ public class MainFrame extends JFrame implements ModelListener {
 			}
 			registerComponentsToModel();
 			getScrollPanel().setViewportView(pdfPanelsContainer);
+			uiHandler.reset();
 			launchTask(currentFile, "Reading pdf...");
 		}
 	}
@@ -248,7 +260,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	}
 
 	private void launchTask(File file, String string) {
-		new TaskPdfOpen(file).execute();
+		new TaskPdfOpen(file, this).execute();
 	}
 
 	private FileFilter createFileFilter() {
@@ -310,6 +322,8 @@ public class MainFrame extends JFrame implements ModelListener {
 			toolBar.add(getJButton());
 			toolBar.add(getButtonDraw());
 			toolBar.add(getButtonSelect());
+			toolBar.add(getButtonDeleteRect());
+			toolBar.add(getButtonDelAll());
 		}
 		return toolBar;
 	}
@@ -350,6 +364,48 @@ public class MainFrame extends JFrame implements ModelListener {
 			});
 		}
 		return buttonSelect;
+	}
+	
+	/**
+	 * This method initializes buttonDeleteRect	
+	 * 	
+	 * @return javax.swing.JButton	
+	 */
+	private JButton getButtonDeleteRect() {
+		if (buttonDeleteRect == null) {
+			buttonDeleteRect = new JButton("Del");
+			setButton(buttonDeleteRect, "/del.png", "Delete selected crop area", true);
+			buttonDeleteRect.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					if (uiHandler.getSelectedRect() != null) {
+						uiHandler.deleteSelected();
+					} else {
+						JOptionPane.showMessageDialog(MainFrame.this, "Select a rectangle first using 'select' tool");
+					}
+				}
+			});
+		}
+		return buttonDeleteRect;
+	}
+	
+	/**
+	 * This method initializes buttonDelAll	
+	 * 	
+	 * @return javax.swing.JButton	
+	 */
+	private JButton getButtonDelAll() {
+		if (buttonDelAll == null) {
+			buttonDelAll = new JButton("DelAll");
+			setButton(buttonDelAll, "/delAll.png", "Delete all crop areas.", true);
+			buttonDelAll.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {					
+					if (JOptionPane.showConfirmDialog(MainFrame.this, "Delete " + uiHandler.getRectCount() + " crop areas?", "Confirm", JOptionPane.YES_NO_CANCEL_OPTION) == 0) {
+						uiHandler.deleteAll();
+					}
+				}
+			});
+		}
+		return buttonDelAll;
 	}
 	
 	/**
@@ -397,6 +453,14 @@ public class MainFrame extends JFrame implements ModelListener {
 		scrollPanel.getViewport().setViewPosition(newViewPos);
 		scrollPanel.revalidate();
 	}
+
+
+
+	
+
+
+
+	
 }
 
 

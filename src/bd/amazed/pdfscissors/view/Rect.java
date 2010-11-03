@@ -1,9 +1,13 @@
 package bd.amazed.pdfscissors.view;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Stroke;
 import java.util.Vector;
 
 import bd.amazed.pdfscissors.model.RectChangeListener;
@@ -22,14 +26,19 @@ public class Rect {
 
 	protected static final Color COLOR_SELECTED_RECT = new Color(0x55000077, true);
 	protected static final Color COLOR_RECT = new Color(0x55555555, true);
+	private static Stroke dashStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{9}, 0);
+	private static Font font;
+	
 	protected Vector<RectChangeListener> listeners = new Vector<RectChangeListener>() ;
-
+	private UIHandler uiHandler;
+	
 	/**
 	 * Initial width, height is zero.
 	 * @param start starting point
 	 */
-	public Rect(Point start) {
+	public Rect(Point start, UIHandler uiHandler) {
 		bounds = new Rectangle(start);
+		this.uiHandler = uiHandler;
 	}
 
 	public void addListener(RectChangeListener listener) {
@@ -87,7 +96,11 @@ public class Rect {
 		fireEvent(toRedraw);
 	}
 
-	private void fireEvent(Rectangle repaintArea) {
+	/**
+	 * 
+	 * @param repaintArea can be null to indicate repaint whole area
+	 */
+	void fireEvent(Rectangle repaintArea) {
 		for (RectChangeListener listener : listeners) {
 			listener.rectUpdated(this, repaintArea);
 		}
@@ -107,6 +120,26 @@ public class Rect {
 			g.setColor(COLOR_RECT);
 		}
 		g.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
+		
+		//draw order number
+		if (isSelected) {
+			g.setColor(Color.BLUE);
+		} else {
+			g.setColor(Color.GRAY);
+		}
+		if (font == null) {
+			font = new Font(g.getFont().getFamily(), g.getFont().getStyle(), g.getFont().getSize() * 2);
+		}
+		g.setFont(font);
+		g.drawString(String.valueOf(uiHandler.getIndexOf(this) + 1), bounds.x + 5, bounds.y + g.getFont().getSize() + 2);
+		
+		//draw dashed border
+		g.setColor(Color.BLACK);
+		Graphics2D g2d = (Graphics2D) g;
+		Stroke oldStroke = g2d.getStroke();
+		g2d.setStroke(dashStroke);
+		g.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
+		g2d.setStroke(oldStroke);
 		if (isSelected) {
 			Rectangle[] cornerboxs = getCornerboxRects();
 			for (int i = 0; i < cornerboxs.length; i++)

@@ -6,6 +6,7 @@
 package bd.amazed.pdfscissors.view;
 
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Image;
@@ -107,7 +108,11 @@ public class PdfPanel extends JPanel implements ModelListener, RectChangeListene
 	
 	@Override
 	public void rectUpdated(Rect rect, Rectangle repaintArea) {
-		repaint(repaintArea);
+		if (repaintArea != null) {
+			repaint(repaintArea);
+		} else {
+			repaint();
+		}
 	}
 
 	protected Rect getRectAt(Point pt) {
@@ -128,6 +133,7 @@ public class PdfPanel extends JPanel implements ModelListener, RectChangeListene
 		private static final int DRAG_CREATE = 1;
 		private static final int DRAG_RESIZE = 2;
 		private static final int DRAG_MOVE = 3;
+		
 
 		/**
 		 * When the mouse is pressed we need to figure out what action to take.
@@ -154,7 +160,7 @@ public class PdfPanel extends JPanel implements ModelListener, RectChangeListene
 					dragStatus = DRAG_NONE; // drag does nothing in this case
 				}
 			} else {
-				Rect newRect = new Rect(curPt); // create rect here
+				Rect newRect = new Rect(curPt, uiHandler); // create rect here
 				newRect.addListener(PdfPanel.this);
 				uiHandler.addRect(newRect);
 				uiHandler.setSelectedRect(newRect);
@@ -169,7 +175,7 @@ public class PdfPanel extends JPanel implements ModelListener, RectChangeListene
 		 * move/resize event that is in progress.
 		 */
 		public void mouseDragged(MouseEvent event) {
-			Point pointer = event.getPoint();
+			Point pointer = event.getPoint();			
 			switch (dragStatus) {
 			case DRAG_MOVE:
 				uiHandler.getSelectedRect().translate(pointer.x - dragAnchor.x,
@@ -183,8 +189,36 @@ public class PdfPanel extends JPanel implements ModelListener, RectChangeListene
 				break;
 			}
 		}
-
-		public void mouseMoved(MouseEvent e) {
+		
+		@Override
+		public void mouseReleased(MouseEvent e) {
+			Rect selectedRect = uiHandler.getSelectedRect();
+			if (selectedRect != null && selectedRect.bounds != null &&(selectedRect.bounds.getWidth() <= 0 || selectedRect.bounds.getHeight() <= 10)) { //TOO small, we dont add those
+				uiHandler.deleteSelected();
+			}
 		}
+		
+		@Override
+		public void mouseEntered(MouseEvent e) {
+			super.mouseEntered(e);
+			if (uiHandler.getEditingMode() == UIHandler.EDIT_MODE_DRAW) {
+				setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+			} else {
+				setCursor(Cursor.getDefaultCursor());
+			}
+		}
+		
+		@Override
+		public void mouseExited(MouseEvent e) {		
+			super.mouseExited(e);
+			setCursor(Cursor.getDefaultCursor());	
+		}
+		
+		public void showPopup(java.awt.event.MouseEvent evt) {
+	        if (evt.isPopupTrigger()) {
+	            
+	        }
+	 
+	    }
 	}
 }
