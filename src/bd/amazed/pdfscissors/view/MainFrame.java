@@ -7,6 +7,7 @@ import bd.amazed.pdfscissors.model.Model;
 import bd.amazed.pdfscissors.model.ModelListener;
 import bd.amazed.pdfscissors.model.PdfCropper;
 import bd.amazed.pdfscissors.model.TaskPdfOpen;
+import bd.amazed.pdfscissors.model.TaskPdfSave;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -31,8 +32,10 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.EventObject;
+import java.util.Iterator;
 
 import javax.imageio.ImageIO;
 import javax.swing.AbstractButton;
@@ -54,6 +57,10 @@ import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 
 import org.jpedal.exception.PdfException;
+
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.pdf.qrcode.Mode;
+
 import javax.swing.JScrollPane;
 import java.util.Vector;
 import javax.swing.JToolBar;
@@ -88,6 +95,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JToggleButton buttonSelect = null;
 	private JButton buttonDeleteRect = null;
 	private JButton buttonDelAll = null;
+	private JButton buttonSave = null;
 
 	/**
 	 * This is the default constructor
@@ -248,7 +256,7 @@ public class MainFrame extends JFrame implements ModelListener {
 			registerComponentsToModel();
 			getScrollPanel().setViewportView(pdfPanelsContainer);
 			uiHandler.reset();
-			launchTask(currentFile, "Reading pdf...");
+			launchOpenTask(currentFile, "Reading pdf...");
 		}
 	}
 
@@ -259,7 +267,7 @@ public class MainFrame extends JFrame implements ModelListener {
 		return defaultPdfPanel;
 	}
 
-	private void launchTask(File file, String string) {
+	private void launchOpenTask(File file, String string) {
 		new TaskPdfOpen(file, this).execute();
 	}
 
@@ -275,7 +283,7 @@ public class MainFrame extends JFrame implements ModelListener {
 
 			@Override
 			public String getDescription() {
-				return null;
+				return "*.pdf";
 			}
 		};
 	}
@@ -320,6 +328,7 @@ public class MainFrame extends JFrame implements ModelListener {
 		if (toolBar == null) {
 			toolBar = new JToolBar();
 			toolBar.add(getJButton());
+			toolBar.add(getButtonSave());
 			toolBar.add(getButtonDraw());
 			toolBar.add(getButtonSelect());
 			toolBar.add(getButtonDeleteRect());
@@ -327,6 +336,65 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 		return toolBar;
 	}
+
+
+	/**
+	 * This method initializes buttonSave	
+	 * 	
+	 * @return javax.swing.JButton	
+	 */
+	private JButton getButtonSave() {
+		if (buttonSave == null) {
+			buttonSave = new JButton("Save");
+			setButton(buttonSave, "/crop.png", "Crop and save to another PDF", true);
+			buttonSave.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					saveFile();
+				}
+			});
+		}
+		return buttonSave;
+	}
+	
+	private void saveFile() {
+		if (uiHandler.getRectCount() == 0) {
+			JOptionPane.showMessageDialog(this, "You have not defined any croping area. Set some area first");
+			return;
+		}
+		
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setFileFilter(createFileFilter());
+		File originalPdf = Model.getInstance().getCurrentFile();
+		// find file name without extension
+		String filePath = originalPdf.getAbsolutePath();
+		int dot = filePath.lastIndexOf('.');
+		int separator = filePath.lastIndexOf(File.separator);
+		filePath = filePath.substring(0, separator + 1) + filePath.substring(separator + 1, dot) + "_scissored.pdf";
+		fileChooser.setSelectedFile(new File(filePath));
+		int retval = fileChooser.showOpenDialog(this);
+		if (retval == JFileChooser.APPROVE_OPTION) {
+			File targetFile = fileChooser.getSelectedFile();
+			if(targetFile.equals(originalPdf)) {
+				if (0 != JOptionPane.showConfirmDialog(this, "You are trying to overwrite the original pdf file.\nYou will permanently loose your original pdf format.\n\nSure to overwrite?", "Confirm overwrite", JOptionPane.YES_NO_CANCEL_OPTION)) {
+					return; // overwrite not allowed by user
+				}
+			} else if (targetFile.exists()) {
+				//confirm overwrite
+				if (0 != JOptionPane.showConfirmDialog(this, targetFile.getName() + " already exists, overwrite?", "Confirm overwrite", JOptionPane.YES_NO_CANCEL_OPTION)) {
+					return; // overwrite not allowed by user
+				}
+			}
+			launchSaveTask(originalPdf, targetFile);
+		}	
+	}
+	
+	private void launchSaveTask(File originalPdf, File targetFile) {
+		ArrayList<Rectangle> newRects = uiHandler.getAllRectangles();
+		new TaskPdfSave(originalPdf, targetFile,newRects, defaultPdfPanel.getWidth(), defaultPdfPanel.getHeight(), this).execute();		
+		
+	}
+
+
 
 	/**
 	 * This method initializes buttonDraw	
@@ -453,6 +521,9 @@ public class MainFrame extends JFrame implements ModelListener {
 		scrollPanel.getViewport().setViewPosition(newViewPos);
 		scrollPanel.revalidate();
 	}
+
+
+
 
 
 

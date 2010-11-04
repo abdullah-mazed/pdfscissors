@@ -7,7 +7,13 @@ import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Vector;
+
+import org.jpedal.exception.PdfException;
+import org.jpedal.objects.PdfPageData;
+
+import bd.amazed.pdfscissors.view.Rect;
 
 
 public class Model {
@@ -110,6 +116,8 @@ public class Model {
         }
         
     }
+    
+    
 
 	public double getZoomFactor() {
 		return zoomFactor;

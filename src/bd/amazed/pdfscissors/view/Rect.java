@@ -214,4 +214,8 @@ public class Rect {
 		}
 		return null;
 	}
+	
+	public Rectangle getRectangleBound() {
+		return bounds;
+	}
 }

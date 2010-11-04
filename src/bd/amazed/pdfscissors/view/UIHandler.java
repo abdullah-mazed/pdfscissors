@@ -1,5 +1,6 @@
 package bd.amazed.pdfscissors.view;
 
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -52,6 +53,14 @@ public class UIHandler {
 
 	public ArrayList<Rect> getAllRects() {
 		return rects;
+	}
+	
+	public ArrayList<Rectangle> getAllRectangles() {
+		ArrayList<Rectangle> rectangles = new ArrayList<Rectangle>();
+		for (Rect rect : rects) {
+			rectangles.add(rect.bounds); //TODO rename rect by CropCell or something
+		}
+		return rectangles;
 	}
 
 	public void deleteSelected() {
