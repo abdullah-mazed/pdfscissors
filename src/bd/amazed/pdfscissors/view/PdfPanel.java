@@ -21,6 +21,8 @@ import java.util.Iterator;
 
 import javax.swing.JPanel;
 
+import org.jpedal.PdfDecoder;
+
 import bd.amazed.pdfscissors.model.Model;
 import bd.amazed.pdfscissors.model.ModelListener;
 import bd.amazed.pdfscissors.model.RectChangeListener;
@@ -29,12 +31,13 @@ import bd.amazed.pdfscissors.model.RectChangeListener;
  * 
  * @author Gagan
  */
-public class PdfPanel extends JPanel implements ModelListener, RectChangeListener {
+public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeListener {
 
 	private String name = "DefaultPanel";
 	protected UIHandler uiHandler;
 	
 	public PdfPanel(UIHandler uiHandler) {
+		super();
 		this.uiHandler = uiHandler;
 		MouseHandler handler = new MouseHandler();
 		addMouseListener(handler);
@@ -46,12 +49,18 @@ public class PdfPanel extends JPanel implements ModelListener, RectChangeListene
 	}
 
 	@Override
-	protected void paintComponent(Graphics g) {
-		super.paintComponent(g);
-		
-		Image image = getImage();
-		if (image != null) {
-			g.drawImage(image, 0, 0, this);
+	public void paintComponent(Graphics g) {
+		System.out.println("PdfPanel.paintComponent");
+		if (uiHandler.isShowMergedMode()) {
+			System.out.println("PdfPanel.paintComponent: show merged page");
+			Image image = getImage();
+			if (image != null) {
+				g.drawImage(image, 0, 0, this);
+			} else {
+				System.out.println("PdfPanel.paintComponent: show merged page: image is null.");
+			}
+		} else {
+			super.paintComponent(g);
 		}
 		
 		Rectangle clipRect = g.getClipBounds();
@@ -86,13 +95,26 @@ public class PdfPanel extends JPanel implements ModelListener, RectChangeListene
 			setPreferredSize(new Dimension(width, height));
 			setSize(new Dimension(width, height));
 		}
-		repaint();
+		invalidate();
+		repaint();		
 	}
 
 	@Override
 	public void newPdfLoaded() {
 		debug("listening to new pdf loaded");
-		updateSize();
+//		updateSize();
+		String filePath = Model.getInstance().getCurrentFile().getAbsolutePath();
+		System.out.println("url: " + filePath);
+        try {
+            openPdfFile(filePath);
+            // System.out.println ("page count: " + pdfDecoder.getPageCount ());
+            decodePage(uiHandler.getPage());
+            setPageParameters(1.0f, 1, 0); //values scaling (1=100%). page number
+            invalidate();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
 	}
 
 	@Override

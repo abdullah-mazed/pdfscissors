@@ -11,10 +11,13 @@ public class UIHandler {
 	private int editingMode;
 	protected ArrayList<Rect> rects;
 	protected Rect selectedRect;
+	
+	private int page;
+	private boolean showMergeMode;
 
 	public UIHandler() {
 		rects = new ArrayList<Rect>();
-		selectedRect = null;
+		reset();
 	}
 
 	public int getEditingMode() {
@@ -96,5 +99,23 @@ public class UIHandler {
 	public void reset() {
 		deleteAll();
 		selectedRect = null; //we are removing all rects, so all rects listners should vanish too.
+		page = 1;
+		showMergeMode = true;
+	}
+
+	public int getPage() {
+		return page;
+	}
+	
+	public void setPage(int page) {
+		this.page = page;
+	}
+
+	public void setMergeMode(boolean showMergeMode) {
+		this.showMergeMode = showMergeMode;
+	}
+
+	public boolean isShowMergedMode() {
+		return showMergeMode;
 	}
 }

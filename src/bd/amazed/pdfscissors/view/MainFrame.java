@@ -26,6 +26,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.WindowAdapter;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeListener;
@@ -56,6 +58,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 
+import org.jpedal.PdfDecoder;
 import org.jpedal.exception.PdfException;
 
 import com.itextpdf.text.DocumentException;
@@ -65,6 +68,7 @@ import javax.swing.JScrollPane;
 import java.util.Vector;
 import javax.swing.JToolBar;
 import javax.swing.JToggleButton;
+import javax.swing.JComboBox;
 
 /**
  * @author Gagan
@@ -96,6 +100,8 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JButton buttonDeleteRect = null;
 	private JButton buttonDelAll = null;
 	private JButton buttonSave = null;
+	private JPanel bottomPanel;
+	private JComboBox pageSelectionCombo = null;
 
 	/**
 	 * This is the default constructor
@@ -134,9 +140,9 @@ public class MainFrame extends JFrame implements ModelListener {
 
 		this.setSize(800, 600);
 		this.rectButtonGroup = new ButtonGroup();
+		this.uiHandler = new UIHandler();
 		this.setContentPane(getJContentPane());
 		this.setTitle("PDF Scissors");
-		this.uiHandler = new UIHandler();
 	}
 
 	private void registerComponentsToModel() {
@@ -189,6 +195,7 @@ public class MainFrame extends JFrame implements ModelListener {
 			jContentPane.setLayout(new BorderLayout());
 			jContentPane.add(getScrollPanel(), BorderLayout.CENTER);
 			jContentPane.add(getToolBar(), BorderLayout.NORTH);
+			jContentPane.add(getBottomPanel(), BorderLayout.SOUTH);
 		}
 		return jContentPane;
 	}
@@ -255,12 +262,12 @@ public class MainFrame extends JFrame implements ModelListener {
 			}
 			registerComponentsToModel();
 			getScrollPanel().setViewportView(pdfPanelsContainer);
-			uiHandler.reset();
+			uiHandler.reset();			
 			launchOpenTask(currentFile, "Reading pdf...");
 		}
 	}
 
-	private Component getDefaultPdfPanel() {
+	private PdfPanel getDefaultPdfPanel() {
 		if (defaultPdfPanel == null) {
 			defaultPdfPanel = new PdfPanel(uiHandler);
 		}
@@ -333,8 +340,30 @@ public class MainFrame extends JFrame implements ModelListener {
 			toolBar.add(getButtonSelect());
 			toolBar.add(getButtonDeleteRect());
 			toolBar.add(getButtonDelAll());
+			toolBar.setFloatable(false);
 		}
 		return toolBar;
+	}
+	
+	private JPanel getBottomPanel() {
+		if (bottomPanel == null) {
+			bottomPanel = new JPanel();
+			
+			JButton backButton = new JButton("<");
+			openFileDependendComponents.add(backButton);
+	        backButton.setToolTipText("Back One page");
+	        bottomPanel.add(backButton);
+	        backButton.addActionListener(new PageChangeHandler(false));
+
+
+	        JButton forwardButton = new JButton(">");
+	        openFileDependendComponents.add(forwardButton);
+	        forwardButton.setToolTipText("Forward One page");
+	        bottomPanel.add(getPageSelectionCombo(), null);
+	        bottomPanel.add(forwardButton);
+	        forwardButton.addActionListener(new PageChangeHandler(true));
+		}
+		return bottomPanel;
 	}
 
 
@@ -501,6 +530,15 @@ public class MainFrame extends JFrame implements ModelListener {
 	@Override
 	public void newPdfLoaded() {
 		debug("listening to new pdf loaded.");
+		//update combo page list		
+		int pageCount = getDefaultPdfPanel().getPageCount();
+		JComboBox combo = getPageSelectionCombo();
+		combo.removeAllItems();
+		combo.addItem("All pages together");
+		for (int i = 0; i < pageCount; i++) {
+			combo.addItem(String.valueOf(i + 1));
+		}
+		
 		getScrollPanel().revalidate();
 		updateOpenFileDependents();
 	}
@@ -522,15 +560,67 @@ public class MainFrame extends JFrame implements ModelListener {
 		scrollPanel.revalidate();
 	}
 
-
-
-
-
-
 	
 
+	/**
+	 * This method initializes pageSelectionCombo	
+	 * 	
+	 * @return javax.swing.JComboBox	
+	 */
+	private JComboBox getPageSelectionCombo() {
+		if (pageSelectionCombo == null) {
+			pageSelectionCombo = new JComboBox();
+			openFileDependendComponents.add(pageSelectionCombo);
+			pageSelectionCombo.setEditable(true);
+			pageSelectionCombo.addItemListener(new ItemListener() {
+				
+				@Override
+				public void itemStateChanged(ItemEvent e) {
+			        String pageIndex = (String)pageSelectionCombo.getSelectedItem();
+			        if (Character.isDigit(pageIndex.charAt(0))) { //page number
+			        	uiHandler.setMergeMode(false);
+			        	int pageNumber = pageSelectionCombo.getSelectedIndex();
+			        	uiHandler.setPage(pageNumber); // we dont have to add +1, cause first time is all page
+			        	try {
+							defaultPdfPanel.decodePage(pageNumber);
+						} catch (Exception ex) {
+							handleException("Failed to decode page " + pageNumber , ex);
+						}
+			        	defaultPdfPanel.invalidate();
+			        	defaultPdfPanel.repaint();
+			        } else {
+			        	uiHandler.setMergeMode(true);
+			        	defaultPdfPanel.repaint();
+			        }
+				}
+			});
+				
+		}
+		return pageSelectionCombo;
+	}
 
+   
+	
+	class PageChangeHandler implements ActionListener {
 
+        private boolean forward;
+
+        PageChangeHandler(boolean forward) {
+            this.forward = forward;
+        }
+
+        public void actionPerformed(ActionEvent e) {
+        	int currentIndex = getPageSelectionCombo().getSelectedIndex();
+            if(forward && currentIndex < getPageSelectionCombo().getItemCount() - 1) {
+            	currentIndex++;
+            	getPageSelectionCombo().setSelectedIndex(currentIndex);
+            } else if ( !forward && currentIndex > 0) {
+            	currentIndex --;
+            	getPageSelectionCombo().setSelectedIndex(currentIndex);
+            }
+        }
+
+    } // inner class BackButtonListener
 	
 }
 
