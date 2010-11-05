@@ -10,6 +10,8 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -62,13 +64,14 @@ public class PdfCropper {
         this.mainFile = file;
     }
 
-    public BufferedImage getImage(int pageNumber) throws PdfException {
+    public BufferedImage getImage(PropertyChangeListener listener) throws PdfException {
         //TODO validate page number
-        int endPage = pageNumber + 4;
+        int endPage = getPdfDecoder().getPageCount();
         BufferedImage lastPage = getPdfDecoder().getPageAsImage(endPage);
 
         if (lastPage != null) {
             for (int i = endPage; i >= 1; i--) {
+            	listener.propertyChange(new PropertyChangeEvent(this, "progress", null, (100 * (endPage - i))/i));
                 BufferedImage pageImage = getPdfDecoder().getPageAsImage(i);
                 if (pageImage != null) {
                 float alpha = 0.5f;

@@ -31,7 +31,7 @@ import bd.amazed.pdfscissors.model.RectChangeListener;
  * 
  * @author Gagan
  */
-public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeListener {
+public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeListener, UIHandlerListener {
 
 	private String name = "DefaultPanel";
 	protected UIHandler uiHandler;
@@ -50,9 +50,7 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 
 	@Override
 	public void paintComponent(Graphics g) {
-		System.out.println("PdfPanel.paintComponent");
 		if (uiHandler.isShowMergedMode()) {
-			System.out.println("PdfPanel.paintComponent: show merged page");
 			Image image = getImage();
 			if (image != null) {
 				g.drawImage(image, 0, 0, this);
@@ -147,6 +145,26 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 		return null;
 	}
 
+	
+	public void updateCursor() {
+		debug("Updating cursor");//XXX
+		if (uiHandler.getEditingMode() == UIHandler.EDIT_MODE_DRAW) {
+			setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+		} else {
+			setCursor(Cursor.getDefaultCursor());
+		}
+	}
+
+	@Override
+	public void editingModeChanged(int newMode) {
+		updateCursor();
+		repaint();
+	}
+
+	@Override
+	public void pageChanged(int index) {
+	
+	}
 
 	protected class MouseHandler extends MouseAdapter implements MouseMotionListener {
 		private Point dragAnchor; // variables using to track state during drag operations
@@ -218,16 +236,15 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 			if (selectedRect != null && selectedRect.bounds != null &&(selectedRect.bounds.getWidth() <= 0 || selectedRect.bounds.getHeight() <= 10)) { //TOO small, we dont add those
 				uiHandler.deleteSelected();
 			}
+			if (uiHandler.getEditingMode() == UIHandler.EDIT_MODE_DRAW) {
+				uiHandler.setEditingMode(UIHandler.EDIT_MODE_SELECT);
+			}
 		}
 		
 		@Override
 		public void mouseEntered(MouseEvent e) {
 			super.mouseEntered(e);
-			if (uiHandler.getEditingMode() == UIHandler.EDIT_MODE_DRAW) {
-				setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
-			} else {
-				setCursor(Cursor.getDefaultCursor());
-			}
+			updateCursor();
 		}
 		
 		@Override

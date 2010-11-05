@@ -1,8 +1,10 @@
 package bd.amazed.pdfscissors.view;
 
+import java.awt.Cursor;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Vector;
 
 public class UIHandler {
 	public static int EDIT_MODE_SELECT = 1;
@@ -14,9 +16,12 @@ public class UIHandler {
 	
 	private int page;
 	private boolean showMergeMode;
+	
+	private Vector<UIHandlerListener> listeners;
 
 	public UIHandler() {
 		rects = new ArrayList<Rect>();
+		listeners = new Vector<UIHandlerListener>();
 		reset();
 	}
 
@@ -29,6 +34,7 @@ public class UIHandler {
 			throw new IllegalArgumentException("Invalid edit mode");
 		}
 		this.editingMode = mode;
+		fireEditModeChanged();
 	}
 
 	public Iterator<Rect> getRectIterator() {
@@ -109,6 +115,7 @@ public class UIHandler {
 	
 	public void setPage(int page) {
 		this.page = page;
+		firePageChanged();
 	}
 
 	public void setMergeMode(boolean showMergeMode) {
@@ -117,5 +124,32 @@ public class UIHandler {
 
 	public boolean isShowMergedMode() {
 		return showMergeMode;
+	}
+	
+	public void addListener(UIHandlerListener listener) {
+		if (!listeners.contains(listener)) {
+			System.out.println("Addinggg               listner               ");//XXXX
+			listeners.add(listener);
+		}
+	}
+	
+	public boolean removeListener(UIHandler listner) {
+		return listeners.remove(listner);
+	}
+	
+	public void removeAllListeners() { 
+		listeners.removeAllElements();
+	}
+	
+	private void fireEditModeChanged() {
+		for (UIHandlerListener listener : listeners) {
+			listener.editingModeChanged(editingMode);
+		}
+	}
+	
+	private void firePageChanged() {
+		for (UIHandlerListener listener : listeners) {
+			listener.pageChanged(page);
+		}
 	}
 }

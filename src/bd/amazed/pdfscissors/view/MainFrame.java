@@ -42,6 +42,7 @@ import java.util.Iterator;
 import javax.imageio.ImageIO;
 import javax.swing.AbstractButton;
 import javax.swing.ButtonGroup;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.SwingWorker;
@@ -137,12 +138,18 @@ public class MainFrame extends JFrame implements ModelListener {
 	 * @return void
 	 */
 	private void initialize() {
-
-		this.setSize(800, 600);
 		this.rectButtonGroup = new ButtonGroup();
 		this.uiHandler = new UIHandler();
 		this.setContentPane(getJContentPane());
 		this.setTitle("PDF Scissors");
+		this.setSize(new Dimension(800,600));
+		this.setMinimumSize(new Dimension(200,200));
+		Dimension screen = getToolkit().getScreenSize();
+		this.setBounds( (screen.width-getWidth())/2, (screen.height-getHeight())/2, getWidth(), getHeight() );
+		this.setExtendedState(JFrame.MAXIMIZED_BOTH);
+
+		
+
 	}
 
 	private void registerComponentsToModel() {
@@ -166,12 +173,17 @@ public class MainFrame extends JFrame implements ModelListener {
 					model.addListener((ModelListener) component);
 					modelRegisteredListeners.add((ModelListener) component);
 				}
+				
+				if (component instanceof UIHandlerListener) {
+					uiHandler.addListener((UIHandlerListener) component);
+				}
 			}
 		}
 
 		// finally add myself.
 		model.addListener(this);
 		modelRegisteredListeners.add(this);
+		
 	}
 	
 	/**
@@ -260,9 +272,15 @@ public class MainFrame extends JFrame implements ModelListener {
 					pdfPanelsContainer.add(getDefaultPdfPanel(), constraints);
 				}
 			}
-			registerComponentsToModel();
+
+			
 			getScrollPanel().setViewportView(pdfPanelsContainer);
-			uiHandler.reset();			
+			
+			uiHandler.reset();
+			uiHandler.removeAllListeners();
+			registerComponentsToModel();
+			uiHandler.addListener(new UIHandlerLisnterForFrame());
+			
 			launchOpenTask(currentFile, "Reading pdf...");
 		}
 	}
@@ -275,7 +293,24 @@ public class MainFrame extends JFrame implements ModelListener {
 	}
 
 	private void launchOpenTask(File file, String string) {
-		new TaskPdfOpen(file, this).execute();
+		final TaskPdfOpen task = new TaskPdfOpen(file, this);
+		final StackViewCreationDialog stackViewCreationDialog = new StackViewCreationDialog(this);
+		stackViewCreationDialog.setModal(true);
+		stackViewCreationDialog.enableProgress(task, new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				//what happens on cancel					
+				task.cancel();
+				stackViewCreationDialog.dispose();
+				
+			}
+		});
+		//what happens on ok
+		task.execute();		
+		
+		stackViewCreationDialog.setVisible(true);
+		
 	}
 
 	private FileFilter createFileFilter() {
@@ -572,6 +607,12 @@ public class MainFrame extends JFrame implements ModelListener {
 			pageSelectionCombo = new JComboBox();
 			openFileDependendComponents.add(pageSelectionCombo);
 			pageSelectionCombo.setEditable(true);
+			
+			//to align text to center
+			DefaultListCellRenderer comboCellRenderer = new DefaultListCellRenderer();
+			comboCellRenderer.setHorizontalAlignment(DefaultListCellRenderer.CENTER);
+			pageSelectionCombo.setRenderer(comboCellRenderer);
+			
 			pageSelectionCombo.addItemListener(new ItemListener() {
 				
 				@Override
@@ -621,6 +662,34 @@ public class MainFrame extends JFrame implements ModelListener {
         }
 
     } // inner class BackButtonListener
+	
+	class UIHandlerLisnterForFrame implements UIHandlerListener {
+
+		@Override
+		public void editingModeChanged(int newMode) {
+			debug("Editing mode : " + newMode);
+			AbstractButton selectedButton = null;
+			if (newMode == UIHandler.EDIT_MODE_DRAW) {
+				selectedButton = getButtonDraw();				
+			} else if (newMode == UIHandler.EDIT_MODE_SELECT) {
+				selectedButton = getButtonSelect();
+			}
+			selectedButton.setSelected(true);
+			Enumeration<AbstractButton> otherButtons = rectButtonGroup.getElements();
+			while(otherButtons.hasMoreElements()) {
+				AbstractButton otherButton = otherButtons.nextElement();
+				if (selectedButton != otherButton) {
+					otherButton.setSelected(false);
+				}
+			}
+		}
+
+		@Override
+		public void pageChanged(int index) {
+			
+		}
+		
+	}
 	
 }
 
