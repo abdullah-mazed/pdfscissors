@@ -29,6 +29,9 @@ public class Model {
 
 	private double zoomFactor;
 	
+	private Rect clipboardRect;
+	private boolean isClipboardCut;
+	
 	private Model() {
 		modelListeners = new java.util.Vector<ModelListener>();
 		zoomFactor = 1;
@@ -96,6 +99,29 @@ public class Model {
 		fireSetPdfFailed(file, err);
 	}
 	
+	public void copyToClipboard(boolean isCut, Rect rect) {
+		if (rect != null) {
+			this.clipboardRect = rect;
+			this.isClipboardCut = isCut;
+			fireClipboardCopyEvent(clipboardRect, isClipboardCut);
+		}
+	}
+	
+	public void pasteFromClipboard() {
+		if (clipboardRect != null) {
+			fireClipboardPasteEvent(clipboardRect, isClipboardCut);
+			if (isClipboardCut) {
+				isClipboardCut = false; //clear clipboard
+				clipboardRect = null;
+			}			
+		}		
+	}
+	
+	public Rect getClipboardRect() {
+		return clipboardRect;
+	}
+	
+	
 	 /**
      * @param zoomFactor max 1.0
      */
@@ -125,10 +151,6 @@ public class Model {
 
 	public Image getScaledPreivewImage() {
 		return scaledPreviewImage;
-	}	
-	
-	public void addCrop(Rectangle rect) {
-		
 	}
 
 	protected void fireNewPdf() {
@@ -146,6 +168,18 @@ public class Model {
 	protected void fireZoomChanged(double oldZoomFactor, double newZoomFactor) {
 		for (ModelListener listener : modelListeners) {
 			listener.zoomChanged(oldZoomFactor, newZoomFactor);
+		}
+	}
+	
+	protected void fireClipboardCopyEvent(Rect onClipboard, boolean isCut) {
+		for (ModelListener listener : modelListeners) {
+			listener.clipboardCopy(isCut, onClipboard);
+		}
+	}
+	
+	protected void fireClipboardPasteEvent(Rect onClipboard, boolean isCut) {
+		for (ModelListener listener : modelListeners) {
+			listener.clipboardPaste(isCut, onClipboard);
 		}
 	}
 }

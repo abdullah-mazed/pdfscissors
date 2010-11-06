@@ -125,6 +125,29 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 		updateSize();
 	}
 		
+
+	@Override
+	public void clipboardCopy(boolean isCut, Rect onClipboard) {
+		
+	}
+	
+	@Override
+	public void clipboardPaste(boolean isCut, Rect onClipboard) {
+		if (onClipboard != null) {
+			try {
+				Rect cloned = (Rect)onClipboard.clone();
+				cloned.translate(5, 5, getWidth(), getHeight()); //a little to right bottom, so that user can see there is a new one on top
+				if (isCut) {
+					uiHandler.delete(onClipboard);
+				}
+				uiHandler.addRect(cloned);
+				uiHandler.setSelectedRect(cloned);
+			} catch (CloneNotSupportedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} //we dont modify the old			
+		}
+	}
 	
 	@Override
 	public void rectUpdated(Rect rect, Rectangle repaintArea) {
@@ -260,4 +283,5 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 	 
 	    }
 	}
+
 }

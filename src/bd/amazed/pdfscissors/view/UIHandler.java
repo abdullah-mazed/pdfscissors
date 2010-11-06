@@ -73,12 +73,16 @@ public class UIHandler {
 	}
 
 	public void deleteSelected() {
-		if (selectedRect != null) {
-			rects.remove(selectedRect);
-			Rect toDelRect = selectedRect;
-			selectedRect = null;
-			toDelRect.fireEvent(null);
-			
+		delete(selectedRect);
+	}
+
+	public void delete(Rect rect) {
+		if (rect != null) {
+			rects.remove(rect);
+			if (selectedRect == rect) {
+				selectedRect = null;
+			}
+			rect.fireEvent(null);			
 		}
 	}
 	
@@ -128,7 +132,6 @@ public class UIHandler {
 	
 	public void addListener(UIHandlerListener listener) {
 		if (!listeners.contains(listener)) {
-			System.out.println("Addinggg               listner               ");//XXXX
 			listeners.add(listener);
 		}
 	}
@@ -150,6 +153,47 @@ public class UIHandler {
 	private void firePageChanged() {
 		for (UIHandlerListener listener : listeners) {
 			listener.pageChanged(page);
+		}
+	}
+
+	public void equalizeWidthOfSelected(int viewWidth) {
+		int maxWidth = -1;
+		Rect maxWidthRect;
+		for (Rect rect: rects) {
+			if (rect.bounds.width > maxWidth) {
+				maxWidth = rect.bounds.width;
+				maxWidthRect = rect;
+			}
+		}
+		for (Rect rect: rects) {
+			rect.bounds.width = maxWidth;
+			if (rect.bounds.x + maxWidth > viewWidth) {
+				rect.bounds.x = viewWidth - maxWidth;
+			}
+		}
+		
+		if (rects.size() > 0) {
+			rects.get(0).fireEvent(null);
+		}
+	}
+	
+	public void equalizeHeightOfSelected(int viewHeight) {
+		int maxHeight = -1;
+		Rect maxWidthRect;
+		for (Rect rect: rects) {
+			if (rect.bounds.height > maxHeight) {
+				maxHeight = rect.bounds.height;
+				maxWidthRect = rect;
+			}
+		}
+		for (Rect rect: rects) {
+			rect.bounds.height = maxHeight;
+			if (rect.bounds.y + maxHeight > viewHeight) {
+				rect.bounds.y = viewHeight - maxHeight;
+			}
+		}
+		if (rects.size() > 0) {
+			rects.get(0).fireEvent(null);
 		}
 	}
 }

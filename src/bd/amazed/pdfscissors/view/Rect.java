@@ -12,7 +12,7 @@ import java.util.Vector;
 
 import bd.amazed.pdfscissors.model.RectChangeListener;
 
-public class Rect {
+public class Rect implements Cloneable {
 	protected Rectangle bounds;
 	protected boolean isSelected;
 
@@ -217,5 +217,10 @@ public class Rect {
 	
 	public Rectangle getRectangleBound() {
 		return bounds;
+	}
+	
+	@Override
+	public Object clone() throws CloneNotSupportedException {	
+		return super.clone();
 	}
 }

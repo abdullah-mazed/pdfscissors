@@ -28,6 +28,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeListener;
@@ -45,6 +46,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.KeyStroke;
 import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import javax.swing.Icon;
@@ -70,6 +72,9 @@ import java.util.Vector;
 import javax.swing.JToolBar;
 import javax.swing.JToggleButton;
 import javax.swing.JComboBox;
+import javax.swing.JMenuBar;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 
 /**
  * @author Gagan
@@ -103,6 +108,19 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JButton buttonSave = null;
 	private JPanel bottomPanel;
 	private JComboBox pageSelectionCombo = null;
+	private JMenuBar jJMenuBar = null;
+	private JMenu menuFile = null;
+	private JMenuItem menuFileOpen = null;
+	private JMenuItem menuSave = null;
+	private JMenu menuEdit = null;
+	private JMenuItem menuCopy = null;
+	private JMenuItem menuCut = null;
+	private JMenuItem menuPaste = null;
+	private JMenuItem menuDelete = null;
+	private JButton buttonEqualWidth = null;
+	private JButton buttonEqualHeight = null;
+	private JMenu menuHelp = null;
+	private JMenuItem menuAbout = null;
 
 	/**
 	 * This is the default constructor
@@ -141,6 +159,7 @@ public class MainFrame extends JFrame implements ModelListener {
 		this.rectButtonGroup = new ButtonGroup();
 		this.uiHandler = new UIHandler();
 		this.setContentPane(getJContentPane());
+		this.setJMenuBar(getJJMenuBar());
 		this.setTitle("PDF Scissors");
 		this.setSize(new Dimension(800,600));
 		this.setMinimumSize(new Dimension(200,200));
@@ -376,6 +395,8 @@ public class MainFrame extends JFrame implements ModelListener {
 			toolBar.add(getButtonDeleteRect());
 			toolBar.add(getButtonDelAll());
 			toolBar.setFloatable(false);
+			toolBar.add(getButtonEqualWidth());
+			toolBar.add(getButtonEqualHeight());
 		}
 		return toolBar;
 	}
@@ -512,7 +533,7 @@ public class MainFrame extends JFrame implements ModelListener {
 					if (uiHandler.getSelectedRect() != null) {
 						uiHandler.deleteSelected();
 					} else {
-						JOptionPane.showMessageDialog(MainFrame.this, "Select a rectangle first using 'select' tool");
+						tellNoRectYet();
 					}
 				}
 			});
@@ -539,6 +560,52 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 		return buttonDelAll;
 	}
+	
+	
+	/**
+	 * This method initializes buttonEqualWidth	
+	 * 	
+	 * @return javax.swing.JButton	
+	 */
+	private JButton getButtonEqualWidth() {
+		if (buttonEqualWidth == null) {
+			buttonEqualWidth = new JButton("Equal width");
+			setButton(buttonEqualWidth, "/sameWidth.png", "Set width of all areas same.", true);
+			buttonEqualWidth.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {					
+					if(uiHandler.getRectCount() > 0) {
+						uiHandler.equalizeWidthOfSelected(defaultPdfPanel.getWidth());
+					} else {
+						tellNoRectYet();
+					}
+				}
+			});
+		}
+		return buttonEqualWidth;
+	}
+	
+	/**
+	 * This method initializes buttonEqualHeight	
+	 * 	
+	 * @return javax.swing.JButton	
+	 */
+	private JButton getButtonEqualHeight() {
+		if (buttonEqualHeight == null) {
+			buttonEqualHeight = new JButton("Equal Height");
+			setButton(buttonEqualHeight, "/sameHeight.png", "Set Heights of crop areas same", true);
+			buttonEqualHeight.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {					
+					if(uiHandler.getRectCount() > 0) {
+						uiHandler.equalizeHeightOfSelected(defaultPdfPanel.getHeight());
+					} else {
+						tellNoRectYet();
+					}
+				}
+			});
+		}
+		return buttonEqualHeight;
+	}
+	
 	
 	/**
 	 * Ensures other buttons in the group will be unselected when given button is selected.
@@ -569,7 +636,7 @@ public class MainFrame extends JFrame implements ModelListener {
 		int pageCount = getDefaultPdfPanel().getPageCount();
 		JComboBox combo = getPageSelectionCombo();
 		combo.removeAllItems();
-		combo.addItem("All pages together");
+		combo.addItem("All pages stacked");
 		for (int i = 0; i < pageCount; i++) {
 			combo.addItem(String.valueOf(i + 1));
 		}
@@ -595,7 +662,17 @@ public class MainFrame extends JFrame implements ModelListener {
 		scrollPanel.revalidate();
 	}
 
+	@Override
+	public void clipboardCopy(boolean isCut, Rect onClipboard) {
+		getMenuPaste().setEnabled(true);
+	}
 	
+	@Override
+	public void clipboardPaste(boolean isCut, Rect onClipboard) {
+		if (isCut) {
+			getMenuPaste().setEnabled(false);
+		}
+	}
 
 	/**
 	 * This method initializes pageSelectionCombo	
@@ -618,7 +695,7 @@ public class MainFrame extends JFrame implements ModelListener {
 				@Override
 				public void itemStateChanged(ItemEvent e) {
 			        String pageIndex = (String)pageSelectionCombo.getSelectedItem();
-			        if (Character.isDigit(pageIndex.charAt(0))) { //page number
+			        if (pageIndex != null && pageIndex.length() > 0 && Character.isDigit(pageIndex.charAt(0))) { //page number
 			        	uiHandler.setMergeMode(false);
 			        	int pageNumber = pageSelectionCombo.getSelectedIndex();
 			        	uiHandler.setPage(pageNumber); // we dont have to add +1, cause first time is all page
@@ -690,6 +767,231 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 		
 	}
+
+	/**
+	 * This method initializes jJMenuBar	
+	 * 	
+	 * @return javax.swing.JMenuBar	
+	 */
+	private JMenuBar getJJMenuBar() {
+		if (jJMenuBar == null) {
+			jJMenuBar = new JMenuBar();
+			jJMenuBar.add(getMenuFile());
+			jJMenuBar.add(getMenuEdit());
+			jJMenuBar.add(getMenuHelp());
+		}
+		return jJMenuBar;
+	}
+
+
+
+	/**
+	 * This method initializes menuFile	
+	 * 	
+	 * @return javax.swing.JMenu	
+	 */
+	private JMenu getMenuFile() {
+		if (menuFile == null) {
+			menuFile = new JMenu("File");
+			menuFile.setMnemonic(KeyEvent.VK_F);
+			menuFile.add(getMenuFileOpen());
+			menuFile.add(getMenuSave());
+		}
+		return menuFile;
+	}
+
+
+
+	/**
+	 * This method initializes menuFileOpen	
+	 * 	
+	 * @return javax.swing.JMenuItem	
+	 */
+	private JMenuItem getMenuFileOpen() {
+		if (menuFileOpen == null) {
+			menuFileOpen = new JMenuItem("Open", KeyEvent.VK_O);
+			menuFileOpen.setAccelerator(KeyStroke.getKeyStroke(
+			        KeyEvent.VK_O, ActionEvent.CTRL_MASK));
+		}
+		return menuFileOpen;
+	}
+
+
+
+	/**
+	 * This method initializes menuSave	
+	 * 	
+	 * @return javax.swing.JMenuItem	
+	 */
+	private JMenuItem getMenuSave() {
+		if (menuSave == null) {
+			menuSave = new JMenuItem("Crop & Save", KeyEvent.VK_S);
+			menuSave.setAccelerator(KeyStroke.getKeyStroke(
+			        KeyEvent.VK_S, ActionEvent.CTRL_MASK));
+		}
+		return menuSave;
+	}
+
+
+
+	/**
+	 * This method initializes menuEdit	
+	 * 	
+	 * @return javax.swing.JMenu	
+	 */
+	private JMenu getMenuEdit() {
+		if (menuEdit == null) {
+			menuEdit = new JMenu("Edit");
+			menuEdit.setMnemonic(KeyEvent.VK_E);
+			menuEdit.add(getMenuCopy());
+			menuEdit.add(getMenuCut());
+			menuEdit.add(getMenuPaste());			
+			menuEdit.add(getMenuDelete());
+		}
+		return menuEdit;
+	}
+
+
+
+	/**
+	 * This method initializes menuCopy	
+	 * 	
+	 * @return javax.swing.JMenuItem	
+	 */
+	private JMenuItem getMenuCopy() {
+		if (menuCopy == null) {
+			menuCopy = new JMenuItem("Copy", KeyEvent.VK_C);
+			menuCopy.setAccelerator(KeyStroke.getKeyStroke(
+			        KeyEvent.VK_C, ActionEvent.CTRL_MASK));
+			menuCopy.addActionListener(new ActionListener() {				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					Model.getInstance().copyToClipboard(false, uiHandler.getSelectedRect());
+				}
+			});
+			openFileDependendComponents.add(menuCopy);
+		}
+		return menuCopy;
+	}
+
+
+
+	/**
+	 * This method initializes menuCut	
+	 * 	
+	 * @return javax.swing.JMenuItem	
+	 */
+	private JMenuItem getMenuCut() {
+		if (menuCut == null) {
+			menuCut = new JMenuItem("Cut", KeyEvent.VK_X);
+			menuCut.setAccelerator(KeyStroke.getKeyStroke(
+			        KeyEvent.VK_X, ActionEvent.CTRL_MASK));
+			menuCut.addActionListener(new ActionListener() {				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					Model.getInstance().copyToClipboard(true, uiHandler.getSelectedRect());
+				}
+			});
+			openFileDependendComponents.add(menuCut);
+			
+		}
+		return menuCut;
+	}
+
+
+
+	/**
+	 * This method initializes menuPaste	
+	 * 	
+	 * @return javax.swing.JMenuItem	
+	 */
+	private JMenuItem getMenuPaste() {
+		if (menuPaste == null) {
+			menuPaste = new JMenuItem("Paste", KeyEvent.VK_V);
+			menuPaste.setAccelerator(KeyStroke.getKeyStroke(
+			        KeyEvent.VK_V, ActionEvent.CTRL_MASK));
+			if(Model.getInstance().getClipboardRect() == null) {
+				menuPaste.setEnabled(false);
+			}
+			menuPaste.addActionListener(new ActionListener() {				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					Model.getInstance().pasteFromClipboard();
+				}
+			});
+			openFileDependendComponents.add(menuPaste);
+		}
+		return menuPaste;
+	}
+
+
+
+	/**
+	 * This method initializes menuDelete	
+	 * 	
+	 * @return javax.swing.JMenuItem	
+	 */
+	private JMenuItem getMenuDelete() {
+		if (menuDelete == null) {
+			menuDelete = new JMenuItem("Delete", KeyEvent.VK_D);
+			menuDelete.setAccelerator(KeyStroke.getKeyStroke("DELETE"));
+			if(Model.getInstance().getClipboardRect() == null) {
+				menuPaste.setEnabled(false);
+			}
+			menuDelete.addActionListener(new ActionListener() {				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					uiHandler.deleteSelected();
+				}
+			});
+			openFileDependendComponents.add(menuDelete);
+		}
+		return menuDelete;
+	}
+
+
+
+	private void tellNoRectYet() {
+		JOptionPane.showMessageDialog(MainFrame.this, "Select a rectangle first using 'select' tool");
+	}
+
+
+
+	/**
+	 * This method initializes menuHelp	
+	 * 	
+	 * @return javax.swing.JMenu	
+	 */
+	private JMenu getMenuHelp() {
+		if (menuHelp == null) {
+			menuHelp = new JMenu("Help");
+			menuHelp.setMnemonic(KeyEvent.VK_H);
+			menuHelp.add(getMenuAbout());
+		}
+		return menuHelp;
+	}
+
+
+
+	/**
+	 * This method initializes menuAbout	
+	 * 	
+	 * @return javax.swing.JMenuItem	
+	 */
+	private JMenuItem getMenuAbout() {
+		if (menuAbout == null) {
+			menuAbout = new JMenuItem("About", KeyEvent.VK_A);
+			menuAbout.addActionListener(new ActionListener() {				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					new AboutView(MainFrame.this).setVisible(true);
+				}
+			});
+		}
+		return menuAbout;
+	}
+
+
 	
 }
 
