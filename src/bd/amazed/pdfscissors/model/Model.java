@@ -7,7 +7,11 @@ import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Properties;
 import java.util.Vector;
 
 import org.jpedal.exception.PdfException;
@@ -18,6 +22,7 @@ import bd.amazed.pdfscissors.view.Rect;
 
 public class Model {
 
+	public static final String PROPERTY_LAST_FILE = "lastFile";
 	private static Model instance;
 	
 	private Vector<ModelListener> modelListeners;
@@ -31,6 +36,8 @@ public class Model {
 	
 	private Rect clipboardRect;
 	private boolean isClipboardCut;
+	private Properties properties;
+	private String propertyFileLocation;
 	
 	private Model() {
 		modelListeners = new java.util.Vector<ModelListener>();
@@ -180,6 +187,38 @@ public class Model {
 	protected void fireClipboardPasteEvent(Rect onClipboard, boolean isCut) {
 		for (ModelListener listener : modelListeners) {
 			listener.clipboardPaste(isCut, onClipboard);
+		}
+	}
+	
+	public Properties getProperties() {
+		if (properties == null) {
+			properties = new Properties();
+			try {
+			    properties.load(new FileInputStream(getPropertyFileLocation()));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return this.properties;
+	}
+	
+	
+	private String getPropertyFileLocation() {
+		if (this.propertyFileLocation == null) {
+			this.propertyFileLocation = System.getProperty("user.home") + File.separator + "pdfscissors/";
+			File file = new File(propertyFileLocation );
+			if (!file.exists()) {
+				file.mkdir();
+			}
+			this.propertyFileLocation += "pdfscissors.properties";
+		}
+		return this.propertyFileLocation;
+	}
+	
+	public void close() {
+		try {
+		    getProperties().store(new FileOutputStream(getPropertyFileLocation()), null);
+		} catch (IOException e) {
 		}
 	}
 }

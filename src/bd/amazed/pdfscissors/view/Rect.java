@@ -16,12 +16,12 @@ public class Rect implements Cloneable {
 	protected Rectangle bounds;
 	protected boolean isSelected;
 
-	protected static final int CORNERBOX_SIZE = 6;
-	protected static final int CORNER_NONE = -1;
-	protected static final int CORNER_TOP_LEFT = 0;
-	protected static final int CORNER_BOTTOM_LEFT = 1;
-	protected static final int CORNER_BUTTOM_RIGHT = 2;
-	protected static final int CORNER_TOP_RIGHT = 3;
+	public static final int CORNERBOX_SIZE = 6;
+	public static final int CORNER_NONE = -1;
+	public static final int CORNER_TOP_LEFT = 0;
+	public static final int CORNER_BOTTOM_LEFT = 1;
+	public static final int CORNER_BUTTOM_RIGHT = 2;
+	public static final int CORNER_TOP_RIGHT = 3;
 	
 
 	protected static final Color COLOR_SELECTED_RECT = new Color(0x55000077, true);
@@ -173,7 +173,7 @@ public class Rect implements Cloneable {
 	 * NE, SW, SE constants depending on which cornerbox is found, or NONE if the
 	 * click doesn't fall within any cornerbox.
 	 */
-	protected int getCornerboxContainingPoint(Point pt) {
+	public int getCornerboxContainingPoint(Point pt) {
 		if (!isSelected) // if we aren't selected, the cornerboxs aren't showing and
 			// thus there are no cornerboxs to check
 			return CORNER_NONE;

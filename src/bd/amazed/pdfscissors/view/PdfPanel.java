@@ -238,7 +238,7 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 		 * move/resize event that is in progress.
 		 */
 		public void mouseDragged(MouseEvent event) {
-			Point pointer = event.getPoint();			
+			Point pointer = event.getPoint();
 			switch (dragStatus) {
 			case DRAG_MOVE:
 				uiHandler.getSelectedRect().translate(pointer.x - dragAnchor.x,
@@ -250,6 +250,42 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 				uiHandler.getSelectedRect().resize(dragAnchor, pointer,
 						getWidth(), getHeight());
 				break;
+			}
+		}
+		
+		@Override
+		public void mouseMoved(MouseEvent event) {
+			Point pointer = event.getPoint();
+			if (uiHandler.getEditingMode() == UIHandler.EDIT_MODE_SELECT) { // select mode
+				 if(getRectAt(pointer) != null) { //move
+					 setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+				 } else if(uiHandler.getSelectedRect() != null) { //resize
+					 int whichCornerbox = uiHandler.getSelectedRect().getCornerboxContainingPoint(pointer);
+						if (whichCornerbox != Rect.CORNER_NONE) {
+							switch (whichCornerbox) {
+							case Rect.CORNER_TOP_LEFT:
+								setCursor(Cursor.getPredefinedCursor(Cursor.NW_RESIZE_CURSOR));
+								break;
+							case Rect.CORNER_TOP_RIGHT:
+								setCursor(Cursor.getPredefinedCursor(Cursor.NE_RESIZE_CURSOR));
+								break;
+							case Rect.CORNER_BOTTOM_LEFT:
+								setCursor(Cursor.getPredefinedCursor(Cursor.SW_RESIZE_CURSOR));
+								break;
+							case Rect.CORNER_BUTTOM_RIGHT:
+								setCursor(Cursor.getPredefinedCursor(Cursor.SE_RESIZE_CURSOR));
+								break;
+							}
+						} else {
+							setCursor(Cursor.getDefaultCursor());
+						}
+				 } else {//normal
+					 setCursor(Cursor.getDefaultCursor());
+				 }
+			} else if (uiHandler.getEditingMode() == UIHandler.EDIT_MODE_DRAW) {
+				setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));				
+			} else {
+				setCursor(Cursor.getDefaultCursor());
 			}
 		}
 		

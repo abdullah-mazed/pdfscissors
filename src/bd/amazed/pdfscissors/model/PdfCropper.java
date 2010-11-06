@@ -56,6 +56,7 @@ public class PdfCropper {
 
     private File mainFile;
     private PdfDecoder pdfDecoder;
+    private boolean isCancel;
 
     public PdfCropper(File file) {
         if (file == null) {
@@ -70,8 +71,10 @@ public class PdfCropper {
         BufferedImage lastPage = getPdfDecoder().getPageAsImage(endPage);
 
         if (lastPage != null) {
-            for (int i = endPage; i >= 1; i--) {
-            	listener.propertyChange(new PropertyChangeEvent(this, "progress", null, (100 * (endPage - i))/i));
+            for (int i = endPage; i >= 1 && !isCancel; i--) {
+            	int percentageDone = (100 * (endPage - i))/endPage;
+            	System.out.println("Stacking page: " + i + ", completed " + percentageDone);            	
+            	listener.propertyChange(new PropertyChangeEvent(this, "progress", null, percentageDone));
                 BufferedImage pageImage = getPdfDecoder().getPageAsImage(i);
                 if (pageImage != null) {
                 float alpha = 0.5f;
@@ -86,6 +89,14 @@ public class PdfCropper {
 
         return lastPage;
     }
+    
+    public boolean isEncrypted() throws PdfException {
+    	return getPdfDecoder().isEncrypted();
+    }
+    
+    public boolean isExtractionAllowed() throws PdfException {
+    	return getPdfDecoder().isExtractionAllowed();
+    }
 
     public void close() {
         if (pdfDecoder != null) {
@@ -96,7 +107,13 @@ public class PdfCropper {
     private PdfDecoder getPdfDecoder() throws PdfException {
         if (pdfDecoder == null) {
             pdfDecoder = new PdfDecoder(true);
-            pdfDecoder.openPdfFile(mainFile.getAbsolutePath());
+            try {
+            	pdfDecoder.openPdfFile(mainFile.getAbsolutePath());
+            } catch (RuntimeException ex) {
+            	if (ex.toString().contains("bouncy")) { //hah, stupid way of doing this, but what can i do if library is throwing RuntimeException :(
+            		throw new PdfException("PDF is encrypted or password protected.\nTry to create an unencrypted pdf first using some other tool.");
+            	}
+            }
         }
         return pdfDecoder;
     }
@@ -232,6 +249,19 @@ public class PdfCropper {
 				tempFile.delete();
 			}
 		}
+	}
+
+	public void cancel() {
+		isCancel = true;
+	}
+
+	public boolean isFileViewable() throws PdfException {
+		return getPdfDecoder().isFileViewable();
+	}
+
+	public void setEncryptionPassword(String password) throws PdfException {
+		getPdfDecoder().setEncryptionPassword(password);
+		
 	}
     
     //helper code:  //http://itext-general.2136553.n4.nabble.com/How-to-Shrink-Content-and-Add-Margins-td2167577.html

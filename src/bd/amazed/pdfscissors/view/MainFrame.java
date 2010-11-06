@@ -146,6 +146,14 @@ public class MainFrame extends JFrame implements ModelListener {
 		}catch(Throwable e) {
 			System.err.println("Failed to set exit on close." + e);
 		}
+		
+		addWindowListener(new WindowAdapter(){
+			@Override
+			public void windowClosing(WindowEvent e) {			
+				super.windowClosing(e);
+				Model.getInstance().close();
+			}
+		});
 	}
 
 	
@@ -272,9 +280,16 @@ public class MainFrame extends JFrame implements ModelListener {
 	private void openFile() {
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileFilter(createFileFilter());
+		String lastFile = Model.getInstance().getProperties().getProperty(Model.PROPERTY_LAST_FILE);
+		if (lastFile != null) {
+			System.out.println("Last opened directory rememberred: " + lastFile);
+			fileChooser.setCurrentDirectory(new File(lastFile));
+		}
+		
 		int retval = fileChooser.showOpenDialog(this);
 		if (retval == JFileChooser.APPROVE_OPTION) {
 			currentFile = fileChooser.getSelectedFile();
+			Model.getInstance().getProperties().setProperty(Model.PROPERTY_LAST_FILE, fileChooser.getCurrentDirectory().getAbsolutePath());
 
 			// create new scrollpane content
 			pdfPanelsContainer = new JPanel();
@@ -368,9 +383,9 @@ public class MainFrame extends JFrame implements ModelListener {
 	}
 
 	private void handleException(String userFriendlyMessage, Throwable ex) {
-		JOptionPane.showMessageDialog(this,userFriendlyMessage
+		JOptionPane.showMessageDialog(this,"Oops! " + userFriendlyMessage
 								+ "\n\n\nTechnical details:\n--------------------------------\n"
-								+ ex);
+								+ ex.getMessage());
 		ex.printStackTrace();
 	}
 
@@ -533,7 +548,7 @@ public class MainFrame extends JFrame implements ModelListener {
 					if (uiHandler.getSelectedRect() != null) {
 						uiHandler.deleteSelected();
 					} else {
-						tellNoRectYet();
+						showDialogNoRectYet();
 					}
 				}
 			});
@@ -551,8 +566,14 @@ public class MainFrame extends JFrame implements ModelListener {
 			buttonDelAll = new JButton("DelAll");
 			setButton(buttonDelAll, "/delAll.png", "Delete all crop areas.", true);
 			buttonDelAll.addActionListener(new java.awt.event.ActionListener() {
-				public void actionPerformed(java.awt.event.ActionEvent e) {					
-					if (JOptionPane.showConfirmDialog(MainFrame.this, "Delete " + uiHandler.getRectCount() + " crop areas?", "Confirm", JOptionPane.YES_NO_CANCEL_OPTION) == 0) {
+				public void actionPerformed(java.awt.event.ActionEvent e) {	
+					if (uiHandler.getRectCount() <= 0) {
+						showDialogNoRectYet();
+					} else if (JOptionPane.showConfirmDialog(MainFrame.this,
+							"Delete " + uiHandler.getRectCount() + " crop area"
+									+ (uiHandler.getRectCount() > 1 ? "s" : "") //singular/plural
+									+ "?", "Confirm",
+							JOptionPane.YES_NO_CANCEL_OPTION) == 0) {
 						uiHandler.deleteAll();
 					}
 				}
@@ -576,7 +597,7 @@ public class MainFrame extends JFrame implements ModelListener {
 					if(uiHandler.getRectCount() > 0) {
 						uiHandler.equalizeWidthOfSelected(defaultPdfPanel.getWidth());
 					} else {
-						tellNoRectYet();
+						showDialogNoRectYet();
 					}
 				}
 			});
@@ -598,7 +619,7 @@ public class MainFrame extends JFrame implements ModelListener {
 					if(uiHandler.getRectCount() > 0) {
 						uiHandler.equalizeHeightOfSelected(defaultPdfPanel.getHeight());
 					} else {
-						tellNoRectYet();
+						showDialogNoRectYet();
 					}
 				}
 			});
@@ -812,6 +833,13 @@ public class MainFrame extends JFrame implements ModelListener {
 			menuFileOpen = new JMenuItem("Open", KeyEvent.VK_O);
 			menuFileOpen.setAccelerator(KeyStroke.getKeyStroke(
 			        KeyEvent.VK_O, ActionEvent.CTRL_MASK));
+			menuFileOpen.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					openFile();
+				}
+			});
 		}
 		return menuFileOpen;
 	}
@@ -828,6 +856,13 @@ public class MainFrame extends JFrame implements ModelListener {
 			menuSave = new JMenuItem("Crop & Save", KeyEvent.VK_S);
 			menuSave.setAccelerator(KeyStroke.getKeyStroke(
 			        KeyEvent.VK_S, ActionEvent.CTRL_MASK));
+			menuSave.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					saveFile();
+				}
+			});
 		}
 		return menuSave;
 	}
@@ -951,7 +986,7 @@ public class MainFrame extends JFrame implements ModelListener {
 
 
 
-	private void tellNoRectYet() {
+	private void showDialogNoRectYet() {
 		JOptionPane.showMessageDialog(MainFrame.this, "Select a rectangle first using 'select' tool");
 	}
 

@@ -9,29 +9,35 @@ import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.JOptionPane;
 import javax.swing.ProgressMonitor;
 import javax.swing.SwingWorker;
+
+import com.itextpdf.text.pdf.PdfException;
 
 public class TaskPdfOpen extends SwingWorker<BufferedImage, Void> {
 
 	private File file;
 	private boolean isCancelled;
+	PdfCropper cropper = null;
+	private Component owner;
 	
 	public TaskPdfOpen(File file, Component owner) {
 		this.file = file;
 		isCancelled = false;
+		this.owner = owner;
 	}
 
 	@Override
 	protected BufferedImage doInBackground() throws Exception {
 
 		debug("Extracting pdf image...");
-		
-		PdfCropper cropper = null;
 		try {
 			cropper = new PdfCropper(file);
-
-			setProgress(1);
+			if (!checkEncryption()) {
+				JOptionPane.showMessageDialog(owner, "Sorry, your pdf is protected, cannot continue");
+			}
+			setProgress(0);
 			BufferedImage image = cropper.getImage(new PropertyChangeListener() {
 				
 				@Override
@@ -55,6 +61,9 @@ public class TaskPdfOpen extends SwingWorker<BufferedImage, Void> {
 	
 	public void cancel() {
 		isCancelled = true;
+		if(this.cropper != null) {
+			cropper.cancel();
+		}
 	}
 
 	@Override
@@ -83,4 +92,35 @@ public class TaskPdfOpen extends SwingWorker<BufferedImage, Void> {
 		System.out.println("TaskPdfOpen:" + string);
 	}
 	
+	
+	/**
+	 * check if encryption present and acertain password, return true if content
+	 * accessable
+	 * 
+	 * @throws org.jpedal.exception.PdfException
+	 */
+	private boolean checkEncryption() throws org.jpedal.exception.PdfException,
+			PdfException {
+
+		// check if file is encrypted
+		if (cropper.isEncrypted()) {
+
+			// if file has a null password it will have been decoded and
+			// isFileViewable will return true
+			while (!cropper.isFileViewable()) {
+
+				/** popup window if password needed */
+				String password = JOptionPane.showInputDialog(owner,
+						"Please enter password");
+
+				/** try and reopen with new password */
+				if (password != null) {
+					cropper.setEncryptionPassword(password);
+				}
+			}
+			return true;
+		}
+		// if not encrypted return true
+		return true;
+	}
 }

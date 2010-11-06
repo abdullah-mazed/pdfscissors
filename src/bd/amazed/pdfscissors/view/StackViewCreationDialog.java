@@ -92,8 +92,7 @@ public class StackViewCreationDialog extends JDialog {
 			textArea.setCursor(null);
 			textArea.setOpaque(false);
 			textArea.setFocusable(false);  
-			textArea.setText( "Creating stack, please wait...\n\nStacking pages with transparency will help you cropping all pages together.\n" +
-					"You can cancel anytime and start cropping by looking at a single page.");
+			textArea.setText( "Creating stack, please wait...\n\nStacking pages with transparency will help you cropping all pages together.\n");
 		}
 		return textArea;
 	}
