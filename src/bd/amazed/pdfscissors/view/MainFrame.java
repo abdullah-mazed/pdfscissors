@@ -471,7 +471,7 @@ public class MainFrame extends JFrame implements ModelListener {
 		int separator = filePath.lastIndexOf(File.separator);
 		filePath = filePath.substring(0, separator + 1) + filePath.substring(separator + 1, dot) + "_scissored.pdf";
 		fileChooser.setSelectedFile(new File(filePath));
-		int retval = fileChooser.showDialog(this, "Save");
+		int retval = fileChooser.showSaveDialog(this);
 		if (retval == JFileChooser.APPROVE_OPTION) {
 			File targetFile = fileChooser.getSelectedFile();
 			if(targetFile.equals(originalPdf)) {
