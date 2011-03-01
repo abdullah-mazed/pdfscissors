@@ -106,6 +106,8 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JButton buttonDeleteRect = null;
 	private JButton buttonDelAll = null;
 	private JButton buttonSave = null;
+	private JButton buttonSplitHorizontal = null;
+	private JButton buttonSplitVertical = null;
 	private JPanel bottomPanel;
 	private JComboBox pageSelectionCombo = null;
 	private JMenuBar jJMenuBar = null;
@@ -412,6 +414,8 @@ public class MainFrame extends JFrame implements ModelListener {
 			toolBar.setFloatable(false);
 			toolBar.add(getButtonEqualWidth());
 			toolBar.add(getButtonEqualHeight());
+			toolBar.add(getButtonSplitHorizontal());
+			toolBar.add(getButtonSplitVertical());
 		}
 		return toolBar;
 	}
@@ -541,7 +545,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	 */
 	private JButton getButtonDeleteRect() {
 		if (buttonDeleteRect == null) {
-			buttonDeleteRect = new JButton("Del");
+			buttonDeleteRect = new JButton("Delete");
 			setButton(buttonDeleteRect, "/del.png", "Delete selected crop area", true);
 			buttonDeleteRect.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
@@ -563,7 +567,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	 */
 	private JButton getButtonDelAll() {
 		if (buttonDelAll == null) {
-			buttonDelAll = new JButton("DelAll");
+			buttonDelAll = new JButton("Delete All");
 			setButton(buttonDelAll, "/delAll.png", "Delete all crop areas.", true);
 			buttonDelAll.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {	
@@ -590,7 +594,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	 */
 	private JButton getButtonEqualWidth() {
 		if (buttonEqualWidth == null) {
-			buttonEqualWidth = new JButton("Equal width");
+			buttonEqualWidth = new JButton("Equal Width");
 			setButton(buttonEqualWidth, "/sameWidth.png", "Set width of all areas same.", true);
 			buttonEqualWidth.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {					
@@ -625,6 +629,40 @@ public class MainFrame extends JFrame implements ModelListener {
 			});
 		}
 		return buttonEqualHeight;
+	}
+	
+	private JButton getButtonSplitHorizontal() {
+		if (buttonSplitHorizontal == null) {
+			buttonSplitHorizontal = new JButton("Split Horizontal");
+			setButton(buttonSplitHorizontal, "/splitHorizontal.png", "Split area in two equals horizontal areas", true);
+			buttonSplitHorizontal.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {					
+					if (uiHandler.getSelectedRect() != null) {
+						uiHandler.splitHorizontalSelected(defaultPdfPanel);
+					} else {
+						showDialogNoRectYet();
+					}
+				}
+			});
+		}
+		return buttonSplitHorizontal;
+	}
+	
+	private JButton getButtonSplitVertical() {
+		if (buttonSplitVertical == null) {
+			buttonSplitVertical = new JButton("Split Vertical");
+			setButton(buttonSplitVertical, "/splitVertical.png", "Split area in two equals vertical areas", true);
+			buttonSplitVertical.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {					
+					if (uiHandler.getSelectedRect() != null) {
+						uiHandler.splitVerticalSelected(defaultPdfPanel);						
+					} else {
+						showDialogNoRectYet();
+					}
+				}
+			});
+		}
+		return buttonSplitVertical;
 	}
 	
 	

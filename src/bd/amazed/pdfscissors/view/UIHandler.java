@@ -1,6 +1,7 @@
 package bd.amazed.pdfscissors.view;
 
 import java.awt.Cursor;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -74,6 +75,50 @@ public class UIHandler {
 
 	public void deleteSelected() {
 		delete(selectedRect);
+	}
+	
+	public void splitHorizontalSelected(PdfPanel pdfPanel) {
+		if (selectedRect != null) {
+			Rectangle bounds = selectedRect.bounds;
+			Point location = bounds.getLocation();
+			
+			Rectangle leftBounds = new Rectangle(selectedRect.bounds.x, selectedRect.bounds.y, selectedRect.bounds.width / 2, selectedRect.bounds.height);
+			Rect leftRect = new Rect(location, this);
+			leftRect.addListener(pdfPanel);
+			leftRect.setBounds(leftBounds);
+			
+			Rectangle rightBounds = new Rectangle(selectedRect.bounds.x + selectedRect.bounds.width / 2, selectedRect.bounds.y, selectedRect.bounds.width / 2, selectedRect.bounds.height);
+			Rect rightRect = new Rect(location, this);
+			rightRect.addListener(pdfPanel);
+			rightRect.setBounds(rightBounds);
+			
+			int indexSelected = rects.indexOf(selectedRect);
+			delete(selectedRect);			
+			rects.add(indexSelected, rightRect);
+			rects.add(indexSelected, leftRect);
+		}
+	}
+	
+	public void splitVerticalSelected(PdfPanel pdfPanel) {
+		if (selectedRect != null) {
+			Rectangle bounds = selectedRect.bounds;
+			Point location = bounds.getLocation();
+			
+			Rectangle upBounds = new Rectangle(selectedRect.bounds.x, selectedRect.bounds.y, selectedRect.bounds.width, selectedRect.bounds.height / 2);
+			Rect upRect = new Rect(location, this);
+			upRect.addListener(pdfPanel);
+			upRect.setBounds(upBounds);
+			
+			Rectangle downBounds = new Rectangle(selectedRect.bounds.x, selectedRect.bounds.y + selectedRect.bounds.height / 2, selectedRect.bounds.width, selectedRect.bounds.height / 2);
+			Rect downRect = new Rect(location, this);
+			downRect.addListener(pdfPanel);
+			downRect.setBounds(downBounds);
+			
+			int indexSelected = rects.indexOf(selectedRect);
+			delete(selectedRect);			
+			rects.add(indexSelected, downRect);
+			rects.add(indexSelected, upRect);
+		}
 	}
 
 	public void delete(Rect rect) {
