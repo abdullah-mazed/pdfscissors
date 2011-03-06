@@ -8,6 +8,7 @@ import bd.amazed.pdfscissors.model.ModelListener;
 import bd.amazed.pdfscissors.model.PdfCropper;
 import bd.amazed.pdfscissors.model.TaskPdfOpen;
 import bd.amazed.pdfscissors.model.TaskPdfSave;
+import bd.amazed.pdfscissors.model.TempFileManager;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -154,6 +155,8 @@ public class MainFrame extends JFrame implements ModelListener {
 			public void windowClosing(WindowEvent e) {			
 				super.windowClosing(e);
 				Model.getInstance().close();
+				getDefaultPdfPanel().closePdfFile(); //TODO may be implement a better way to notify to close
+				TempFileManager.getInstance().clean();				
 			}
 		});
 	}
@@ -468,7 +471,7 @@ public class MainFrame extends JFrame implements ModelListener {
 		
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileFilter(createFileFilter());
-		File originalPdf = Model.getInstance().getCurrentFile();
+		File originalPdf = Model.getInstance().getOriginalFile();
 		// find file name without extension
 		String filePath = originalPdf.getAbsolutePath();
 		int dot = filePath.lastIndexOf('.');
@@ -488,7 +491,7 @@ public class MainFrame extends JFrame implements ModelListener {
 					return; // overwrite not allowed by user
 				}
 			}
-			launchSaveTask(originalPdf, targetFile);
+			launchSaveTask(Model.getInstance().getCurrentFile(), targetFile);
 		}	
 	}
 	

@@ -17,13 +17,14 @@ import com.itextpdf.text.pdf.PdfException;
 
 public class TaskPdfOpen extends SwingWorker<BufferedImage, Void> {
 
-	private File file;
+	private File originalFile;
+	private File normalizedFile;
 	private boolean isCancelled;
 	PdfCropper cropper = null;
 	private Component owner;
 	
 	public TaskPdfOpen(File file, Component owner) {
-		this.file = file;
+		this.originalFile = file;
 		isCancelled = false;
 		this.owner = owner;
 	}
@@ -31,9 +32,13 @@ public class TaskPdfOpen extends SwingWorker<BufferedImage, Void> {
 	@Override
 	protected BufferedImage doInBackground() throws Exception {
 
+		debug("Normalzing pdf...");
+		normalizedFile = PdfCropper.getNormalizedPdf(originalFile);
+		normalizedFile.deleteOnExit();
+		
 		debug("Extracting pdf image...");
 		try {
-			cropper = new PdfCropper(file);
+			cropper = new PdfCropper(normalizedFile);
 			if (!checkEncryption()) {
 				JOptionPane.showMessageDialog(owner, "Sorry, your pdf is protected, cannot continue");
 			}
@@ -47,9 +52,9 @@ public class TaskPdfOpen extends SwingWorker<BufferedImage, Void> {
 			});
 			setProgress(100);
 			if (image == null) {
-				debug("Ups.. null image for " + file);
+				debug("Ups.. null image for " + normalizedFile);
 			} else {
-				debug("PDF loaded " + file);
+				debug("PDF loaded " + normalizedFile);
 			}
 			return image;
 		} finally {
@@ -76,14 +81,14 @@ public class TaskPdfOpen extends SwingWorker<BufferedImage, Void> {
 			try {
 				image = this.get();
 				if (image != null && ! isCancelled) {
-					Model.getInstance().setPdf(file, image);
+					Model.getInstance().setPdf(normalizedFile, originalFile, image);
 				} else {
-					Model.getInstance().setPdfLoadFailed(file, new org.jpedal.exception.PdfException("Failed to extract image. Check if PDF is password protected or corrupted."));
+					Model.getInstance().setPdfLoadFailed(originalFile, new org.jpedal.exception.PdfException("Failed to extract image. Check if PDF is password protected or corrupted."));
 				}
 			} catch (InterruptedException e) {
 				e.printStackTrace(); //ignore
 			} catch (ExecutionException e) {
-				Model.getInstance().setPdfLoadFailed(file, e.getCause());
+				Model.getInstance().setPdfLoadFailed(originalFile, e.getCause());
 			}
 		}
 	}

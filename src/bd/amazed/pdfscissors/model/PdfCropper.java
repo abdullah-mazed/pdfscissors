@@ -54,7 +54,8 @@ import bd.amazed.pdfscissors.view.Rect;
  */
 public class PdfCropper {
 
-    private File mainFile;
+	private static final String TEMP_PREFIX_PDFSCISSOR = "~pdfscissor_";
+	private File mainFile;
     private PdfDecoder pdfDecoder;
     private boolean isCancel;
 
@@ -118,6 +119,65 @@ public class PdfCropper {
         return pdfDecoder;
     }
     
+    
+	
+    /**
+     * Normalizing takes care of different widths / heights of pages by setting max width, height to all pages.a
+     */
+	public static File getNormalizedPdf(File originalFile) throws DocumentException, IOException
+	{
+		PdfReader reader = null;
+		Document doc = null;
+		PdfWriter writer = null;
+		try {
+			File tempFile = TempFileManager.getInstance().createTempFile(TEMP_PREFIX_PDFSCISSOR + originalFile.getName() + "_", null, true);
+			debug("Creating temp file at " + tempFile);
+			reader = new PdfReader(originalFile.getAbsolutePath());
+			int endPage = reader.getNumberOfPages();
+			doc = new Document(getMaxBoundingBox(reader, endPage), 0, 0, 0, 0);
+			writer = PdfWriter.getInstance(doc, new FileOutputStream(tempFile));
+			doc.open();
+			PdfContentByte cb = writer.getDirectContent();
+
+			for (int i = 1; i <= endPage; i++) {
+				PdfImportedPage page = writer.getImportedPage(reader, i);
+				float Scale = 1f;
+				cb.addTemplate(page, Scale, 0, 0, Scale, 0, 0);
+				doc.newPage();
+			}
+	        return tempFile;
+		
+		} finally {
+			if (doc != null) {
+				doc.close();
+			}
+			
+			if (writer != null) {
+				writer.close();
+			}
+			
+			if (reader != null) {
+				reader.close();
+			}
+		}
+	}
+
+
+	private static com.itextpdf.text.Rectangle getMaxBoundingBox(PdfReader reader, int endPage) {
+		com.itextpdf.text.Rectangle maxBoundingBox = new com.itextpdf.text.Rectangle(0, 0, 0, 0);
+        for (int i = 1; i <= endPage; i++) {
+            com.itextpdf.text.Rectangle boundingBox = reader.getPageSize(i);
+            
+            if (boundingBox.getWidth()>maxBoundingBox.getWidth())
+            	maxBoundingBox.setRight(boundingBox.getWidth());
+            
+            if (boundingBox.getHeight()>maxBoundingBox.getHeight())
+            	maxBoundingBox.setBottom(boundingBox.getHeight());
+        }
+		return maxBoundingBox;
+	}
+
+    
 	
 	public static void cropPdf(File originalFile, File targetFile, ArrayList<java.awt.Rectangle> rects, int viewWidth, int viewHeight, ProgressMonitor progressMonitor) throws IOException, DocumentException {
 
@@ -164,7 +224,7 @@ public class PdfCropper {
 			reader.consolidateNamedDestinations();
 			int originalPageCount = reader.getNumberOfPages();
 			document = new Document(reader.getPageSizeWithRotation(1));
-			tempFile = File.createTempFile("pdfscissors_" + System.currentTimeMillis(), "Gagan");
+			tempFile = TempFileManager.getInstance().createTempFile(TEMP_PREFIX_PDFSCISSOR + System.currentTimeMillis(), null, true);
 			writer = new PdfCopy(document, new FileOutputStream(tempFile));
 			document.open();
 	
@@ -296,5 +356,9 @@ public class PdfCropper {
 //        } 
 //        stamper.close(); 
 //} 
+	
+	private static void debug(String string) {
+		System.out.println("TaskPdfOpen:" + string);
+	}
 }
 

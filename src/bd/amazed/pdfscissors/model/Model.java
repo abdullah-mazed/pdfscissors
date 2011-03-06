@@ -26,8 +26,10 @@ public class Model {
 	private static Model instance;
 	
 	private Vector<ModelListener> modelListeners;
-	
+
+	// we basically read from a temp normalized file. Original file reference is just stored.
 	private File currentFile;
+	private File originalFile;
 	private BufferedImage previewImage;
 	/** When zoom factor is not 1.*/
 	private Image scaledPreviewImage; 
@@ -67,10 +69,11 @@ public class Model {
 	
 	/**
 	 * 
-	 * @param file file, must not be null
+	 * @param file file, must not be null. This should be a normalized temp file
+	 * @param originalFile original file
 	 * @param previewImage previewImage, must not be null
 	 */
-	public void setPdf(File file, BufferedImage previewImage) {
+	public void setPdf(File file, File originalFile, BufferedImage previewImage) {
 		if(file == null) {
 			throw new IllegalArgumentException("Cannot set null file to model");
 		}
@@ -78,6 +81,7 @@ public class Model {
 			throw new IllegalArgumentException("Cannot set null preview image to model");
 		}
 		currentFile = file;
+		this.originalFile = originalFile;
 		this.previewImage = previewImage;
 		fireNewPdf();
 	}
@@ -88,6 +92,10 @@ public class Model {
 	 */
 	public File getCurrentFile() {
 		return currentFile;
+	}
+	
+	public File getOriginalFile() {
+		return originalFile;
 	}
 	
 	/**
