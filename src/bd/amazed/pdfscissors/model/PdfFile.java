@@ -6,9 +6,8 @@ import java.io.File;
 import java.util.HashMap;
 
 /**
- * Contains data related to the pdf file. 
- * Use normalized pdf file for actual cropping.
- *
+ * Contains data related to the pdf file. Use normalized pdf file for actual cropping.
+ * 
  */
 public class PdfFile {
 
@@ -22,9 +21,9 @@ public class PdfFile {
 	private HashMap<String, String> pdfInfo;
 
 	private PdfFile() {
-		
+
 	}
-	
+
 	public PdfFile(File normalizedFile, File origiFile) {
 		setNormalizedFile(normalizedFile);
 		setOriginalFile(origiFile);
@@ -47,8 +46,7 @@ public class PdfFile {
 
 	public void setOriginalFile(File originalFile) {
 		if (originalFile == null) {
-			throw new IllegalArgumentException(
-					"Cannot set null originalFile to model");
+			throw new IllegalArgumentException("Cannot set null originalFile to model");
 		}
 		this.originalFile = originalFile;
 	}
@@ -59,8 +57,7 @@ public class PdfFile {
 
 	public void setPreviewImage(BufferedImage previewImage) {
 		if (previewImage == null) {
-			throw new IllegalArgumentException(
-					"Cannot set null preview image to model");
+			throw new IllegalArgumentException("Cannot set null preview image to model");
 		}
 		this.previewImage = previewImage;
 	}

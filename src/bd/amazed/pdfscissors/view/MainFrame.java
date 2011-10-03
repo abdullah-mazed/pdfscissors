@@ -93,12 +93,11 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JScrollPane scrollPanel = null;
 	/** Panel containing PdfPanels. */
 	private JPanel pdfPanelsContainer = null;
-	private ButtonGroup rectButtonGroup = null;  //  @jve:decl-index=0:
-	/** Contains all components that are disabled until file open.*/
+	private ButtonGroup rectButtonGroup = null; // @jve:decl-index=0:
+	/** Contains all components that are disabled until file open. */
 	private Vector<Component> openFileDependendComponents = null;
 	/**
-	 * Keeps track of already registered listeners. Used to re-register
-	 * listners.
+	 * Keeps track of already registered listeners. Used to re-register listners.
 	 */
 	private Vector<ModelListener> modelRegisteredListeners;
 	private JToolBar toolBar = null;
@@ -138,31 +137,29 @@ public class MainFrame extends JFrame implements ModelListener {
 		updateOpenFileDependents();
 		try {
 			URL url = MainFrame.class.getResource("/icon.png");
-			if(url != null) {
+			if (url != null) {
 				setIconImage(ImageIO.read(url));
 			}
 		} catch (IOException e) {
 			System.err.println("Failed to get frame icon");
 		}
-		
+
 		try {
 			setDefaultCloseOperation(EXIT_ON_CLOSE);
-		}catch(Throwable e) {
+		} catch (Throwable e) {
 			System.err.println("Failed to set exit on close." + e);
 		}
-		
-		addWindowListener(new WindowAdapter(){
+
+		addWindowListener(new WindowAdapter() {
 			@Override
-			public void windowClosing(WindowEvent e) {			
+			public void windowClosing(WindowEvent e) {
 				super.windowClosing(e);
 				Model.getInstance().close();
-				getDefaultPdfPanel().closePdfFile(); //TODO may be implement a better way to notify to close
-				TempFileManager.getInstance().clean();				
+				getDefaultPdfPanel().closePdfFile(); // TODO may be implement a better way to notify to close
+				TempFileManager.getInstance().clean();
 			}
 		});
 	}
-
-	
 
 	/**
 	 * This method initializes this
@@ -175,13 +172,11 @@ public class MainFrame extends JFrame implements ModelListener {
 		this.setContentPane(getJContentPane());
 		this.setJMenuBar(getJJMenuBar());
 		this.setTitle("PDF Scissors");
-		this.setSize(new Dimension(800,600));
-		this.setMinimumSize(new Dimension(200,200));
+		this.setSize(new Dimension(800, 600));
+		this.setMinimumSize(new Dimension(200, 200));
 		Dimension screen = getToolkit().getScreenSize();
-		this.setBounds( (screen.width-getWidth())/2, (screen.height-getHeight())/2, getWidth(), getHeight() );
+		this.setBounds((screen.width - getWidth()) / 2, (screen.height - getHeight()) / 2, getWidth(), getHeight());
 		this.setExtendedState(JFrame.MAXIMIZED_BOTH);
-
-		
 
 	}
 
@@ -206,7 +201,7 @@ public class MainFrame extends JFrame implements ModelListener {
 					model.addListener((ModelListener) component);
 					modelRegisteredListeners.add((ModelListener) component);
 				}
-				
+
 				if (component instanceof UIHandlerListener) {
 					uiHandler.addListener((UIHandlerListener) component);
 				}
@@ -216,9 +211,9 @@ public class MainFrame extends JFrame implements ModelListener {
 		// finally add myself.
 		model.addListener(this);
 		modelRegisteredListeners.add(this);
-		
+
 	}
-	
+
 	/**
 	 * Enable/disable buttons etc which should be disabled when there is no file.
 	 */
@@ -251,8 +246,8 @@ public class MainFrame extends JFrame implements ModelListener {
 	 * @return javax.swing.JButton
 	 */
 	private JButton getJButton() {
-		if (jButton == null) {			
-			jButton = new JButton("Open"); //a string literal is here only for eclipse visual editor.
+		if (jButton == null) {
+			jButton = new JButton("Open"); // a string literal is here only for eclipse visual editor.
 			String imageFile = "/open.png";
 			String text = "Open a pdf file";
 			setButton(jButton, imageFile, text, false);
@@ -265,23 +260,23 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 		return jButton;
 	}
-	
+
 	private void setButton(AbstractButton button, String imageLocation, String tooltip, boolean isOpenFileDependent) {
-        String imgLocation = imageLocation;
-        URL imageURL = MainFrame.class.getResource(imageLocation);
-        if (imageURL != null) {                      //image found
-            button.setIcon(new ImageIcon(imageURL, tooltip));
-            button.setText(null);
-        } else {                                     //no image found
-            button.setText(tooltip);
-            System.err.println("Resource not found: " + imgLocation);
-        }
-        button.setToolTipText(tooltip);
-        button.setActionCommand(tooltip);
-        if (isOpenFileDependent) {
-        	openFileDependendComponents.add(button);
-        }
-    }
+		String imgLocation = imageLocation;
+		URL imageURL = MainFrame.class.getResource(imageLocation);
+		if (imageURL != null) { // image found
+			button.setIcon(new ImageIcon(imageURL, tooltip));
+			button.setText(null);
+		} else { // no image found
+			button.setText(tooltip);
+			System.err.println("Resource not found: " + imgLocation);
+		}
+		button.setToolTipText(tooltip);
+		button.setActionCommand(tooltip);
+		if (isOpenFileDependent) {
+			openFileDependendComponents.add(button);
+		}
+	}
 
 	private void openFile() {
 		JFileChooser fileChooser = new JFileChooser();
@@ -291,7 +286,7 @@ public class MainFrame extends JFrame implements ModelListener {
 			System.out.println("Last opened directory rememberred: " + lastFile);
 			fileChooser.setCurrentDirectory(new File(lastFile));
 		}
-		
+
 		int retval = fileChooser.showOpenDialog(this);
 		if (retval == JFileChooser.APPROVE_OPTION) {
 			currentFile = fileChooser.getSelectedFile();
@@ -313,14 +308,13 @@ public class MainFrame extends JFrame implements ModelListener {
 				}
 			}
 
-			
 			getScrollPanel().setViewportView(pdfPanelsContainer);
-			
+
 			uiHandler.reset();
 			uiHandler.removeAllListeners();
 			registerComponentsToModel();
 			uiHandler.addListener(new UIHandlerLisnterForFrame());
-			
+
 			launchOpenTask(currentFile, "Reading pdf...");
 		}
 	}
@@ -337,20 +331,20 @@ public class MainFrame extends JFrame implements ModelListener {
 		final StackViewCreationDialog stackViewCreationDialog = new StackViewCreationDialog(this);
 		stackViewCreationDialog.setModal(true);
 		stackViewCreationDialog.enableProgress(task, new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				//what happens on cancel					
+				// what happens on cancel
 				task.cancel();
 				stackViewCreationDialog.dispose();
-				
+
 			}
 		});
-		//what happens on ok
-		task.execute();		
-		
+		// what happens on ok
+		task.execute();
+
 		stackViewCreationDialog.setVisible(true);
-		
+
 	}
 
 	private FileFilter createFileFilter() {
@@ -370,7 +364,6 @@ public class MainFrame extends JFrame implements ModelListener {
 		};
 	}
 
-
 	/**
 	 * This method initializes scrollPanel
 	 * 
@@ -389,9 +382,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	}
 
 	private void handleException(String userFriendlyMessage, Throwable ex) {
-		JOptionPane.showMessageDialog(this,"Oops! " + userFriendlyMessage
-								+ "\n\n\nTechnical details:\n--------------------------------\n"
-								+ ex.getMessage());
+		JOptionPane.showMessageDialog(this, "Oops! " + userFriendlyMessage + "\n\n\nTechnical details:\n--------------------------------\n" + ex.getMessage());
 		ex.printStackTrace();
 	}
 
@@ -399,12 +390,10 @@ public class MainFrame extends JFrame implements ModelListener {
 		JOptionPane.showMessageDialog(this, string);
 	}
 
-	
-
 	/**
-	 * This method initializes toolBar	
-	 * 	
-	 * @return javax.swing.JToolBar	
+	 * This method initializes toolBar
+	 * 
+	 * @return javax.swing.JToolBar
 	 */
 	private JToolBar getToolBar() {
 		if (toolBar == null) {
@@ -423,33 +412,31 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 		return toolBar;
 	}
-	
+
 	private JPanel getBottomPanel() {
 		if (bottomPanel == null) {
 			bottomPanel = new JPanel();
-			
+
 			JButton backButton = new JButton("<");
 			openFileDependendComponents.add(backButton);
-	        backButton.setToolTipText("Back One page");
-	        bottomPanel.add(backButton);
-	        backButton.addActionListener(new PageChangeHandler(false));
+			backButton.setToolTipText("Back One page");
+			bottomPanel.add(backButton);
+			backButton.addActionListener(new PageChangeHandler(false));
 
-
-	        JButton forwardButton = new JButton(">");
-	        openFileDependendComponents.add(forwardButton);
-	        forwardButton.setToolTipText("Forward One page");
-	        bottomPanel.add(getPageSelectionCombo(), null);
-	        bottomPanel.add(forwardButton);
-	        forwardButton.addActionListener(new PageChangeHandler(true));
+			JButton forwardButton = new JButton(">");
+			openFileDependendComponents.add(forwardButton);
+			forwardButton.setToolTipText("Forward One page");
+			bottomPanel.add(getPageSelectionCombo(), null);
+			bottomPanel.add(forwardButton);
+			forwardButton.addActionListener(new PageChangeHandler(true));
 		}
 		return bottomPanel;
 	}
 
-
 	/**
-	 * This method initializes buttonSave	
-	 * 	
-	 * @return javax.swing.JButton	
+	 * This method initializes buttonSave
+	 * 
+	 * @return javax.swing.JButton
 	 */
 	private JButton getButtonSave() {
 		if (buttonSave == null) {
@@ -463,13 +450,13 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 		return buttonSave;
 	}
-	
+
 	private void saveFile() {
 		if (uiHandler.getRectCount() == 0) {
 			JOptionPane.showMessageDialog(this, "You have not defined any croping area. Set some area first");
 			return;
 		}
-		
+
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileFilter(createFileFilter());
 		File originalPdf = Model.getInstance().getPdf().getOriginalFile();
@@ -482,36 +469,34 @@ public class MainFrame extends JFrame implements ModelListener {
 		int retval = fileChooser.showSaveDialog(this);
 		if (retval == JFileChooser.APPROVE_OPTION) {
 			File targetFile = fileChooser.getSelectedFile();
-			if(targetFile.equals(originalPdf)) {
+			if (targetFile.equals(originalPdf)) {
 				if (0 != JOptionPane.showConfirmDialog(this, "You are trying to overwrite the original pdf file.\nYou will permanently loose your original pdf format.\n\nSure to overwrite?", "Confirm overwrite", JOptionPane.YES_NO_CANCEL_OPTION)) {
 					return; // overwrite not allowed by user
 				}
 			} else if (targetFile.exists()) {
-				//confirm overwrite
+				// confirm overwrite
 				if (0 != JOptionPane.showConfirmDialog(this, targetFile.getName() + " already exists, overwrite?", "Confirm overwrite", JOptionPane.YES_NO_CANCEL_OPTION)) {
 					return; // overwrite not allowed by user
 				}
 			}
 			launchSaveTask(Model.getInstance().getPdf(), targetFile);
-		}	
+		}
 	}
-	
+
 	private void launchSaveTask(PdfFile pdfFile, File targetFile) {
 		ArrayList<Rectangle> newRects = uiHandler.getAllRectangles();
-		new TaskPdfSave(pdfFile, targetFile,newRects, defaultPdfPanel.getWidth(), defaultPdfPanel.getHeight(),this).execute();		
-		
+		new TaskPdfSave(pdfFile, targetFile, newRects, defaultPdfPanel.getWidth(), defaultPdfPanel.getHeight(), this).execute();
+
 	}
 
-
-
 	/**
-	 * This method initializes buttonDraw	
-	 * 	
-	 * @return javax.swing.JToggleButton	
+	 * This method initializes buttonDraw
+	 * 
+	 * @return javax.swing.JToggleButton
 	 */
 	private JToggleButton getButtonDraw() {
 		if (buttonDraw == null) {
-			buttonDraw = new JToggleButton("Draw", true); //selected initially			
+			buttonDraw = new JToggleButton("Draw", true); // selected initially
 			setButton(buttonDraw, "/draw.png", "Draw an area for cropping.", true);
 			setToggleButtonGroup(buttonDraw, rectButtonGroup);
 			buttonDraw.addActionListener(new java.awt.event.ActionListener() {
@@ -524,9 +509,9 @@ public class MainFrame extends JFrame implements ModelListener {
 	}
 
 	/**
-	 * This method initializes buttonSelect	
-	 * 	
-	 * @return javax.swing.JButton	
+	 * This method initializes buttonSelect
+	 * 
+	 * @return javax.swing.JButton
 	 */
 	private JToggleButton getButtonSelect() {
 		if (buttonSelect == null) {
@@ -541,11 +526,11 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 		return buttonSelect;
 	}
-	
+
 	/**
-	 * This method initializes buttonDeleteRect	
-	 * 	
-	 * @return javax.swing.JButton	
+	 * This method initializes buttonDeleteRect
+	 * 
+	 * @return javax.swing.JButton
 	 */
 	private JButton getButtonDeleteRect() {
 		if (buttonDeleteRect == null) {
@@ -563,25 +548,22 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 		return buttonDeleteRect;
 	}
-	
+
 	/**
-	 * This method initializes buttonDelAll	
-	 * 	
-	 * @return javax.swing.JButton	
+	 * This method initializes buttonDelAll
+	 * 
+	 * @return javax.swing.JButton
 	 */
 	private JButton getButtonDelAll() {
 		if (buttonDelAll == null) {
 			buttonDelAll = new JButton("Delete All");
 			setButton(buttonDelAll, "/delAll.png", "Delete all crop areas.", true);
 			buttonDelAll.addActionListener(new java.awt.event.ActionListener() {
-				public void actionPerformed(java.awt.event.ActionEvent e) {	
+				public void actionPerformed(java.awt.event.ActionEvent e) {
 					if (uiHandler.getRectCount() <= 0) {
 						showDialogNoRectYet();
-					} else if (JOptionPane.showConfirmDialog(MainFrame.this,
-							"Delete " + uiHandler.getRectCount() + " crop area"
-									+ (uiHandler.getRectCount() > 1 ? "s" : "") //singular/plural
-									+ "?", "Confirm",
-							JOptionPane.YES_NO_CANCEL_OPTION) == 0) {
+					} else if (JOptionPane.showConfirmDialog(MainFrame.this, "Delete " + uiHandler.getRectCount() + " crop area" + (uiHandler.getRectCount() > 1 ? "s" : "") // singular/plural
+							+ "?", "Confirm", JOptionPane.YES_NO_CANCEL_OPTION) == 0) {
 						uiHandler.deleteAll();
 					}
 				}
@@ -589,20 +571,19 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 		return buttonDelAll;
 	}
-	
-	
+
 	/**
-	 * This method initializes buttonEqualWidth	
-	 * 	
-	 * @return javax.swing.JButton	
+	 * This method initializes buttonEqualWidth
+	 * 
+	 * @return javax.swing.JButton
 	 */
 	private JButton getButtonEqualWidth() {
 		if (buttonEqualWidth == null) {
 			buttonEqualWidth = new JButton("Equal Width");
 			setButton(buttonEqualWidth, "/sameWidth.png", "Set width of all areas same.", true);
 			buttonEqualWidth.addActionListener(new java.awt.event.ActionListener() {
-				public void actionPerformed(java.awt.event.ActionEvent e) {					
-					if(uiHandler.getRectCount() > 0) {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					if (uiHandler.getRectCount() > 0) {
 						uiHandler.equalizeWidthOfSelected(defaultPdfPanel.getWidth());
 					} else {
 						showDialogNoRectYet();
@@ -612,19 +593,19 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 		return buttonEqualWidth;
 	}
-	
+
 	/**
-	 * This method initializes buttonEqualHeight	
-	 * 	
-	 * @return javax.swing.JButton	
+	 * This method initializes buttonEqualHeight
+	 * 
+	 * @return javax.swing.JButton
 	 */
 	private JButton getButtonEqualHeight() {
 		if (buttonEqualHeight == null) {
 			buttonEqualHeight = new JButton("Equal Height");
 			setButton(buttonEqualHeight, "/sameHeight.png", "Set Heights of crop areas same", true);
 			buttonEqualHeight.addActionListener(new java.awt.event.ActionListener() {
-				public void actionPerformed(java.awt.event.ActionEvent e) {					
-					if(uiHandler.getRectCount() > 0) {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					if (uiHandler.getRectCount() > 0) {
 						uiHandler.equalizeHeightOfSelected(defaultPdfPanel.getHeight());
 					} else {
 						showDialogNoRectYet();
@@ -634,13 +615,13 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 		return buttonEqualHeight;
 	}
-	
+
 	private JButton getButtonSplitHorizontal() {
 		if (buttonSplitHorizontal == null) {
 			buttonSplitHorizontal = new JButton("Split Horizontal");
 			setButton(buttonSplitHorizontal, "/splitHorizontal.png", "Split area in two equals horizontal areas", true);
 			buttonSplitHorizontal.addActionListener(new java.awt.event.ActionListener() {
-				public void actionPerformed(java.awt.event.ActionEvent e) {					
+				public void actionPerformed(java.awt.event.ActionEvent e) {
 					if (uiHandler.getSelectedRect() != null) {
 						uiHandler.splitHorizontalSelected(defaultPdfPanel);
 					} else {
@@ -651,15 +632,15 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 		return buttonSplitHorizontal;
 	}
-	
+
 	private JButton getButtonSplitVertical() {
 		if (buttonSplitVertical == null) {
 			buttonSplitVertical = new JButton("Split Vertical");
 			setButton(buttonSplitVertical, "/splitVertical.png", "Split area in two equals vertical areas", true);
 			buttonSplitVertical.addActionListener(new java.awt.event.ActionListener() {
-				public void actionPerformed(java.awt.event.ActionEvent e) {					
+				public void actionPerformed(java.awt.event.ActionEvent e) {
 					if (uiHandler.getSelectedRect() != null) {
-						uiHandler.splitVerticalSelected(defaultPdfPanel);						
+						uiHandler.splitVerticalSelected(defaultPdfPanel);
 					} else {
 						showDialogNoRectYet();
 					}
@@ -668,34 +649,33 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 		return buttonSplitVertical;
 	}
-	
-	
+
 	/**
 	 * Ensures other buttons in the group will be unselected when given button is selected.
+	 * 
 	 * @param button
 	 * @param group
 	 */
 	private void setToggleButtonGroup(final JToggleButton button, final ButtonGroup group) {
 		group.add(button);
 		button.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				boolean otherButtonMode = ! button.isSelected();
+				boolean otherButtonMode = !button.isSelected();
 				Enumeration<AbstractButton> otherButtons = group.getElements();
-				while(otherButtons.hasMoreElements()) {
+				while (otherButtons.hasMoreElements()) {
 					otherButtons.nextElement().setSelected(otherButtonMode);
 				}
-				
+
 			}
 		});
 	}
-	
-	
+
 	@Override
 	public void newPdfLoaded() {
 		debug("listening to new pdf loaded.");
-		//update combo page list		
+		// update combo page list
 		int pageCount = getDefaultPdfPanel().getPageCount();
 		JComboBox combo = getPageSelectionCombo();
 		combo.removeAllItems();
@@ -703,7 +683,7 @@ public class MainFrame extends JFrame implements ModelListener {
 		for (int i = 0; i < pageCount; i++) {
 			combo.addItem(String.valueOf(i + 1));
 		}
-		
+
 		getScrollPanel().revalidate();
 		updateOpenFileDependents();
 	}
@@ -717,10 +697,8 @@ public class MainFrame extends JFrame implements ModelListener {
 	public void zoomChanged(double oldZoomFactor, double newZoomFactor) {
 		Rectangle oldView = scrollPanel.getViewport().getViewRect();
 		Point newViewPos = new Point();
-		newViewPos.x = Math.max(0, (int) ((oldView.x + oldView.width / 2)
-				* newZoomFactor - oldView.width / 2));
-		newViewPos.y = Math.max(0, (int) ((oldView.y + oldView.height / 2)
-				* newZoomFactor - oldView.height / 2));
+		newViewPos.x = Math.max(0, (int) ((oldView.x + oldView.width / 2) * newZoomFactor - oldView.width / 2));
+		newViewPos.y = Math.max(0, (int) ((oldView.y + oldView.height / 2) * newZoomFactor - oldView.height / 2));
 		scrollPanel.getViewport().setViewPosition(newViewPos);
 		scrollPanel.revalidate();
 	}
@@ -729,7 +707,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	public void clipboardCopy(boolean isCut, Rect onClipboard) {
 		getMenuPaste().setEnabled(true);
 	}
-	
+
 	@Override
 	public void clipboardPaste(boolean isCut, Rect onClipboard) {
 		if (isCut) {
@@ -738,71 +716,70 @@ public class MainFrame extends JFrame implements ModelListener {
 	}
 
 	/**
-	 * This method initializes pageSelectionCombo	
-	 * 	
-	 * @return javax.swing.JComboBox	
+	 * This method initializes pageSelectionCombo
+	 * 
+	 * @return javax.swing.JComboBox
 	 */
 	private JComboBox getPageSelectionCombo() {
 		if (pageSelectionCombo == null) {
 			pageSelectionCombo = new JComboBox();
 			openFileDependendComponents.add(pageSelectionCombo);
 			pageSelectionCombo.setEditable(true);
-			
-			//to align text to center
+
+			// to align text to center
 			DefaultListCellRenderer comboCellRenderer = new DefaultListCellRenderer();
 			comboCellRenderer.setHorizontalAlignment(DefaultListCellRenderer.CENTER);
 			pageSelectionCombo.setRenderer(comboCellRenderer);
-			
+
 			pageSelectionCombo.addItemListener(new ItemListener() {
-				
+
 				@Override
 				public void itemStateChanged(ItemEvent e) {
-			        String pageIndex = (String)pageSelectionCombo.getSelectedItem();
-			        if (pageIndex != null && pageIndex.length() > 0 && Character.isDigit(pageIndex.charAt(0))) { //page number
-			        	uiHandler.setMergeMode(false);
-			        	int pageNumber = pageSelectionCombo.getSelectedIndex();
-			        	uiHandler.setPage(pageNumber); // we dont have to add +1, cause first time is all page
-			        	try {
+					String pageIndex = (String) pageSelectionCombo.getSelectedItem();
+					if (pageIndex != null && pageIndex.length() > 0 && Character.isDigit(pageIndex.charAt(0))) { // page
+						// number
+						uiHandler.setMergeMode(false);
+						int pageNumber = pageSelectionCombo.getSelectedIndex();
+						uiHandler.setPage(pageNumber); // we dont have to add +1, cause first time is all page
+						try {
 							defaultPdfPanel.decodePage(pageNumber);
 						} catch (Exception ex) {
-							handleException("Failed to decode page " + pageNumber , ex);
+							handleException("Failed to decode page " + pageNumber, ex);
 						}
-			        	defaultPdfPanel.invalidate();
-			        	defaultPdfPanel.repaint();
-			        } else {
-			        	uiHandler.setMergeMode(true);
-			        	defaultPdfPanel.repaint();
-			        }
+						defaultPdfPanel.invalidate();
+						defaultPdfPanel.repaint();
+					} else {
+						uiHandler.setMergeMode(true);
+						defaultPdfPanel.repaint();
+					}
 				}
 			});
-				
+
 		}
 		return pageSelectionCombo;
 	}
 
-   
-	
 	class PageChangeHandler implements ActionListener {
 
-        private boolean forward;
+		private boolean forward;
 
-        PageChangeHandler(boolean forward) {
-            this.forward = forward;
-        }
+		PageChangeHandler(boolean forward) {
+			this.forward = forward;
+		}
 
-        public void actionPerformed(ActionEvent e) {
-        	int currentIndex = getPageSelectionCombo().getSelectedIndex();
-            if(forward && currentIndex < getPageSelectionCombo().getItemCount() - 1) {
-            	currentIndex++;
-            	getPageSelectionCombo().setSelectedIndex(currentIndex);
-            } else if ( !forward && currentIndex > 0) {
-            	currentIndex --;
-            	getPageSelectionCombo().setSelectedIndex(currentIndex);
-            }
-        }
+		public void actionPerformed(ActionEvent e) {
+			int currentIndex = getPageSelectionCombo().getSelectedIndex();
+			if (forward && currentIndex < getPageSelectionCombo().getItemCount() - 1) {
+				currentIndex++;
+				getPageSelectionCombo().setSelectedIndex(currentIndex);
+			} else if (!forward && currentIndex > 0) {
+				currentIndex--;
+				getPageSelectionCombo().setSelectedIndex(currentIndex);
+			}
+		}
 
-    } // inner class BackButtonListener
-	
+	} // inner class BackButtonListener
+
 	class UIHandlerLisnterForFrame implements UIHandlerListener {
 
 		@Override
@@ -810,13 +787,13 @@ public class MainFrame extends JFrame implements ModelListener {
 			debug("Editing mode : " + newMode);
 			AbstractButton selectedButton = null;
 			if (newMode == UIHandler.EDIT_MODE_DRAW) {
-				selectedButton = getButtonDraw();				
+				selectedButton = getButtonDraw();
 			} else if (newMode == UIHandler.EDIT_MODE_SELECT) {
 				selectedButton = getButtonSelect();
 			}
 			selectedButton.setSelected(true);
 			Enumeration<AbstractButton> otherButtons = rectButtonGroup.getElements();
-			while(otherButtons.hasMoreElements()) {
+			while (otherButtons.hasMoreElements()) {
 				AbstractButton otherButton = otherButtons.nextElement();
 				if (selectedButton != otherButton) {
 					otherButton.setSelected(false);
@@ -826,15 +803,15 @@ public class MainFrame extends JFrame implements ModelListener {
 
 		@Override
 		public void pageChanged(int index) {
-			
+
 		}
-		
+
 	}
 
 	/**
-	 * This method initializes jJMenuBar	
-	 * 	
-	 * @return javax.swing.JMenuBar	
+	 * This method initializes jJMenuBar
+	 * 
+	 * @return javax.swing.JMenuBar
 	 */
 	private JMenuBar getJJMenuBar() {
 		if (jJMenuBar == null) {
@@ -846,12 +823,10 @@ public class MainFrame extends JFrame implements ModelListener {
 		return jJMenuBar;
 	}
 
-
-
 	/**
-	 * This method initializes menuFile	
-	 * 	
-	 * @return javax.swing.JMenu	
+	 * This method initializes menuFile
+	 * 
+	 * @return javax.swing.JMenu
 	 */
 	private JMenu getMenuFile() {
 		if (menuFile == null) {
@@ -863,20 +838,17 @@ public class MainFrame extends JFrame implements ModelListener {
 		return menuFile;
 	}
 
-
-
 	/**
-	 * This method initializes menuFileOpen	
-	 * 	
-	 * @return javax.swing.JMenuItem	
+	 * This method initializes menuFileOpen
+	 * 
+	 * @return javax.swing.JMenuItem
 	 */
 	private JMenuItem getMenuFileOpen() {
 		if (menuFileOpen == null) {
 			menuFileOpen = new JMenuItem("Open", KeyEvent.VK_O);
-			menuFileOpen.setAccelerator(KeyStroke.getKeyStroke(
-			        KeyEvent.VK_O, ActionEvent.CTRL_MASK));
+			menuFileOpen.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
 			menuFileOpen.addActionListener(new ActionListener() {
-				
+
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 					openFile();
@@ -886,20 +858,17 @@ public class MainFrame extends JFrame implements ModelListener {
 		return menuFileOpen;
 	}
 
-
-
 	/**
-	 * This method initializes menuSave	
-	 * 	
-	 * @return javax.swing.JMenuItem	
+	 * This method initializes menuSave
+	 * 
+	 * @return javax.swing.JMenuItem
 	 */
 	private JMenuItem getMenuSave() {
 		if (menuSave == null) {
 			menuSave = new JMenuItem("Crop & Save", KeyEvent.VK_S);
-			menuSave.setAccelerator(KeyStroke.getKeyStroke(
-			        KeyEvent.VK_S, ActionEvent.CTRL_MASK));
+			menuSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
 			menuSave.addActionListener(new ActionListener() {
-				
+
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 					saveFile();
@@ -909,12 +878,10 @@ public class MainFrame extends JFrame implements ModelListener {
 		return menuSave;
 	}
 
-
-
 	/**
-	 * This method initializes menuEdit	
-	 * 	
-	 * @return javax.swing.JMenu	
+	 * This method initializes menuEdit
+	 * 
+	 * @return javax.swing.JMenu
 	 */
 	private JMenu getMenuEdit() {
 		if (menuEdit == null) {
@@ -922,25 +889,22 @@ public class MainFrame extends JFrame implements ModelListener {
 			menuEdit.setMnemonic(KeyEvent.VK_E);
 			menuEdit.add(getMenuCopy());
 			menuEdit.add(getMenuCut());
-			menuEdit.add(getMenuPaste());			
+			menuEdit.add(getMenuPaste());
 			menuEdit.add(getMenuDelete());
 		}
 		return menuEdit;
 	}
 
-
-
 	/**
-	 * This method initializes menuCopy	
-	 * 	
-	 * @return javax.swing.JMenuItem	
+	 * This method initializes menuCopy
+	 * 
+	 * @return javax.swing.JMenuItem
 	 */
 	private JMenuItem getMenuCopy() {
 		if (menuCopy == null) {
 			menuCopy = new JMenuItem("Copy", KeyEvent.VK_C);
-			menuCopy.setAccelerator(KeyStroke.getKeyStroke(
-			        KeyEvent.VK_C, ActionEvent.CTRL_MASK));
-			menuCopy.addActionListener(new ActionListener() {				
+			menuCopy.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.CTRL_MASK));
+			menuCopy.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					Model.getInstance().copyToClipboard(false, uiHandler.getSelectedRect());
@@ -951,46 +915,40 @@ public class MainFrame extends JFrame implements ModelListener {
 		return menuCopy;
 	}
 
-
-
 	/**
-	 * This method initializes menuCut	
-	 * 	
-	 * @return javax.swing.JMenuItem	
+	 * This method initializes menuCut
+	 * 
+	 * @return javax.swing.JMenuItem
 	 */
 	private JMenuItem getMenuCut() {
 		if (menuCut == null) {
 			menuCut = new JMenuItem("Cut", KeyEvent.VK_X);
-			menuCut.setAccelerator(KeyStroke.getKeyStroke(
-			        KeyEvent.VK_X, ActionEvent.CTRL_MASK));
-			menuCut.addActionListener(new ActionListener() {				
+			menuCut.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_X, ActionEvent.CTRL_MASK));
+			menuCut.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					Model.getInstance().copyToClipboard(true, uiHandler.getSelectedRect());
 				}
 			});
 			openFileDependendComponents.add(menuCut);
-			
+
 		}
 		return menuCut;
 	}
 
-
-
 	/**
-	 * This method initializes menuPaste	
-	 * 	
-	 * @return javax.swing.JMenuItem	
+	 * This method initializes menuPaste
+	 * 
+	 * @return javax.swing.JMenuItem
 	 */
 	private JMenuItem getMenuPaste() {
 		if (menuPaste == null) {
 			menuPaste = new JMenuItem("Paste", KeyEvent.VK_V);
-			menuPaste.setAccelerator(KeyStroke.getKeyStroke(
-			        KeyEvent.VK_V, ActionEvent.CTRL_MASK));
-			if(Model.getInstance().getClipboardRect() == null) {
+			menuPaste.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V, ActionEvent.CTRL_MASK));
+			if (Model.getInstance().getClipboardRect() == null) {
 				menuPaste.setEnabled(false);
 			}
-			menuPaste.addActionListener(new ActionListener() {				
+			menuPaste.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					Model.getInstance().pasteFromClipboard();
@@ -1001,21 +959,19 @@ public class MainFrame extends JFrame implements ModelListener {
 		return menuPaste;
 	}
 
-
-
 	/**
-	 * This method initializes menuDelete	
-	 * 	
-	 * @return javax.swing.JMenuItem	
+	 * This method initializes menuDelete
+	 * 
+	 * @return javax.swing.JMenuItem
 	 */
 	private JMenuItem getMenuDelete() {
 		if (menuDelete == null) {
 			menuDelete = new JMenuItem("Delete", KeyEvent.VK_D);
 			menuDelete.setAccelerator(KeyStroke.getKeyStroke("DELETE"));
-			if(Model.getInstance().getClipboardRect() == null) {
+			if (Model.getInstance().getClipboardRect() == null) {
 				menuPaste.setEnabled(false);
 			}
-			menuDelete.addActionListener(new ActionListener() {				
+			menuDelete.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					uiHandler.deleteSelected();
@@ -1026,18 +982,14 @@ public class MainFrame extends JFrame implements ModelListener {
 		return menuDelete;
 	}
 
-
-
 	private void showDialogNoRectYet() {
 		JOptionPane.showMessageDialog(MainFrame.this, "Select a rectangle first using 'select' tool");
 	}
 
-
-
 	/**
-	 * This method initializes menuHelp	
-	 * 	
-	 * @return javax.swing.JMenu	
+	 * This method initializes menuHelp
+	 * 
+	 * @return javax.swing.JMenu
 	 */
 	private JMenu getMenuHelp() {
 		if (menuHelp == null) {
@@ -1048,17 +1000,15 @@ public class MainFrame extends JFrame implements ModelListener {
 		return menuHelp;
 	}
 
-
-
 	/**
-	 * This method initializes menuAbout	
-	 * 	
-	 * @return javax.swing.JMenuItem	
+	 * This method initializes menuAbout
+	 * 
+	 * @return javax.swing.JMenuItem
 	 */
 	private JMenuItem getMenuAbout() {
 		if (menuAbout == null) {
 			menuAbout = new JMenuItem("About", KeyEvent.VK_A);
-			menuAbout.addActionListener(new ActionListener() {				
+			menuAbout.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					new AboutView(MainFrame.this).setVisible(true);
@@ -1068,8 +1018,4 @@ public class MainFrame extends JFrame implements ModelListener {
 		return menuAbout;
 	}
 
-
-	
 }
-
-

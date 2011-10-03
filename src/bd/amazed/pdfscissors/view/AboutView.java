@@ -23,28 +23,23 @@ import javax.swing.JDialog;
 public class AboutView extends JDialog {
 
 	private static final long serialVersionUID = 1L;
-	private String url = "www.pdfscissors.com";  //  @jve:decl-index=0:
+	private String url = "www.pdfscissors.com"; // @jve:decl-index=0:
 	private String versionValue = "0.0.2 beta";
 	private String authorLabel = "Author";
 	private String authorValue = "Abdullah Al Mazed (Gagan)";
-	private String homePageValue ="<html><a href=\"" + url + "\">" + url + "</a></html>";
-	private String sourceForget =  "<html><a href=\"https://sourceforge.net/projects/pdfscissors/\">sourceforge.net/projects/pdfscissors</a></html>";
-	private String appDesc = "<HTML>" +
-			"<B>PDF Scissors </B>" + versionValue + "<BR><BR>" +
-			
-			"<B>Author: </B> Abdullah Al Mazed (Gagan)" + "<BR><BR>" +
-			
-			"<B> License: </B>This is a free open source software.<BR>" +
-			"Use it for free respecting Affero General Public License.<BR> <BR>" +
-			
-	"<B>Libraries used :</B> iTextPdf, JPedal.<br>" + 
-	"I didnot check every details of the licenses, however, since I am releasing as open source and for free, there should not be any issue." +
-	"If you notice any issue, please leave a message in my website or sourceforge page.<BR> <BR>" +
-	
-	"<B>If this software was any useful, please drop a comment to inspire!<br>Enjoy! :) </B>" +
-	"</HTML>";
-//	
-	
+	private String homePageValue = "<html><a href=\"" + url + "\">" + url + "</a></html>";
+	private String sourceForget = "<html><a href=\"https://sourceforge.net/projects/pdfscissors/\">sourceforge.net/projects/pdfscissors</a></html>";
+	private String appDesc = "<HTML>" + "<B>PDF Scissors </B>" + versionValue + "<BR><BR>" +
+
+	"<B>Author: </B> Abdullah Al Mazed (Gagan)" + "<BR><BR>" +
+
+	"<B> License: </B>This is a free open source software.<BR>" + "Use it for free respecting Affero General Public License.<BR> <BR>" +
+
+	"<B>Libraries used :</B> iTextPdf, JPedal.<br>" + "I didnot check every details of the licenses, however, since I am releasing as open source and for free, there should not be any issue." + "If you notice any issue, please leave a message in my website or sourceforge page.<BR> <BR>" +
+
+	"<B>If this software was any useful, please drop a comment to inspire!<br>Enjoy! :) </B>" + "</HTML>";
+	//
+
 	private JPanel jContentPane = null;
 	private JLabel image = null;
 	private JPanel centerPanel = null;
@@ -60,7 +55,7 @@ public class AboutView extends JDialog {
 		super(owner);
 		initialize();
 		Dimension screen = getToolkit().getScreenSize();
-		this.setBounds( (screen.width-getWidth())/2, (screen.height-getHeight())/2, getWidth(), getHeight() );
+		this.setBounds((screen.width - getWidth()) / 2, (screen.height - getHeight()) / 2, getWidth(), getHeight());
 	}
 
 	/**
@@ -96,13 +91,13 @@ public class AboutView extends JDialog {
 	}
 
 	/**
-	 * This method initializes centerPanel	
-	 * 	
-	 * @return javax.swing.JPanel	
+	 * This method initializes centerPanel
+	 * 
+	 * @return javax.swing.JPanel
 	 */
 	private JPanel getCenterPanel() {
 		if (centerPanel == null) {
-			
+
 			centerPanel = new JPanel();
 			centerPanel.setLayout(new BorderLayout());
 			centerPanel.add(getDescription(), BorderLayout.CENTER);
@@ -112,9 +107,9 @@ public class AboutView extends JDialog {
 	}
 
 	/**
-	 * This method initializes description	
-	 * 	
-	 * @return javax.swing.JTextArea	
+	 * This method initializes description
+	 * 
+	 * @return javax.swing.JTextArea
 	 */
 	private JLabel getDescription() {
 		if (description == null) {
@@ -124,9 +119,9 @@ public class AboutView extends JDialog {
 	}
 
 	/**
-	 * This method initializes bottomPanel	
-	 * 	
-	 * @return javax.swing.JPanel	
+	 * This method initializes bottomPanel
+	 * 
+	 * @return javax.swing.JPanel
 	 */
 	private JPanel getBottomPanel() {
 		if (bottomPanel == null) {
@@ -139,9 +134,9 @@ public class AboutView extends JDialog {
 	}
 
 	/**
-	 * This method initializes button	
-	 * 	
-	 * @return javax.swing.JButton	
+	 * This method initializes button
+	 * 
+	 * @return javax.swing.JButton
 	 */
 	private JButton getButton() {
 		if (button == null) {
@@ -167,11 +162,11 @@ public class AboutView extends JDialog {
 		}
 		return button;
 	}
-	
+
 	/**
-	 * This method initializes button	
-	 * 	
-	 * @return javax.swing.JButton	
+	 * This method initializes button
+	 * 
+	 * @return javax.swing.JButton
 	 */
 	private JButton getSourceButton() {
 		if (sourceForgeButton == null) {

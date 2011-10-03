@@ -6,9 +6,9 @@ import java.io.File;
 import bd.amazed.pdfscissors.view.Rect;
 
 public interface ModelListener {
-	
+
 	public void newPdfLoaded();
-	
+
 	public void pdfLoadFailed(File failedFile, Throwable cause);
 
 	public void zoomChanged(double oldZoomFactor, double newZoomFactor);

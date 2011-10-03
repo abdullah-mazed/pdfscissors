@@ -1,4 +1,5 @@
 package bd.amazed.pdfscissors.view;
+
 import java.awt.BorderLayout;
 import java.awt.Component;
 
@@ -30,12 +31,14 @@ public class StackViewCreationDialog extends JDialog {
 	private JButton cancelButton = null;
 	private JLabel helpImage = null;
 	private JPanel bottomPanel = null;
-	private ActionListener actionListener; 
+	private ActionListener actionListener;
 	private JProgressBar progressbar = null;
-	public StackViewCreationDialog(ActionListener okActionListener) {		
+
+	public StackViewCreationDialog(ActionListener okActionListener) {
 		this.actionListener = okActionListener;
 		initialize();
 	}
+
 	/**
 	 * This is the default constructor
 	 */
@@ -53,7 +56,7 @@ public class StackViewCreationDialog extends JDialog {
 		this.setSize(717, 464);
 		this.setContentPane(getJContentPane());
 		Dimension screen = getToolkit().getScreenSize();
-		this.setBounds( (screen.width-getWidth())/2, (screen.height-getHeight())/2, getWidth(), getHeight() );
+		this.setBounds((screen.width - getWidth()) / 2, (screen.height - getHeight()) / 2, getWidth(), getHeight());
 	}
 
 	/**
@@ -67,10 +70,10 @@ public class StackViewCreationDialog extends JDialog {
 			helpImage.setText("");
 			helpImage.setHorizontalAlignment(SwingConstants.CENTER);
 			helpImage.setIcon(new ImageIcon(getClass().getResource("/stackedpage.png")));
-			
+
 			JPanel textPanel = new JPanel();
 			textPanel.add(getTextArea());
-			
+
 			jContentPane = new JPanel();
 			jContentPane.setLayout(new BorderLayout());
 			jContentPane.add(textPanel, BorderLayout.NORTH);
@@ -81,9 +84,9 @@ public class StackViewCreationDialog extends JDialog {
 	}
 
 	/**
-	 * This method initializes textArea	
-	 * 	
-	 * @return javax.swing.JTextArea	
+	 * This method initializes textArea
+	 * 
+	 * @return javax.swing.JTextArea
 	 */
 	private JTextArea getTextArea() {
 		if (textArea == null) {
@@ -91,27 +94,29 @@ public class StackViewCreationDialog extends JDialog {
 			textArea.setEditable(false);
 			textArea.setCursor(null);
 			textArea.setOpaque(false);
-			textArea.setFocusable(false);  
-			textArea.setText( "Creating stack, please wait...\n\nStacking pages with transparency will help you cropping all pages together.\n");
+			textArea.setFocusable(false);
+			textArea.setText("Creating stack, please wait...\n\nStacking pages with transparency will help you cropping all pages together.\n");
 		}
 		return textArea;
 	}
+
 	/**
-	 * This method initializes bottomPanel	
-	 * 	
-	 * @return javax.swing.JPanel	
+	 * This method initializes bottomPanel
+	 * 
+	 * @return javax.swing.JPanel
 	 */
 	private JPanel getBottomPanel() {
 		if (bottomPanel == null) {
 			bottomPanel = new JPanel();
-			
+
 		}
 		return bottomPanel;
 	}
+
 	/**
-	 * This method initializes progressbar	
-	 * 	
-	 * @return javax.swing.JProgressBar	
+	 * This method initializes progressbar
+	 * 
+	 * @return javax.swing.JProgressBar
 	 */
 	public JProgressBar getProgressbar() {
 		if (progressbar == null) {
@@ -122,7 +127,7 @@ public class StackViewCreationDialog extends JDialog {
 		}
 		return progressbar;
 	}
-	
+
 	public void enableProgress(SwingWorker worker, ActionListener progressCancelListener) {
 		getBottomPanel().removeAll();
 		getBottomPanel().add(getProgressbar(), null);
@@ -135,16 +140,17 @@ public class StackViewCreationDialog extends JDialog {
 				if ("progress" == evt.getPropertyName()) {
 					int progress = (Integer) evt.getNewValue();
 					getProgressbar().setValue(progress);
-				} else if("done" == evt.getPropertyName()) {
+				} else if ("done" == evt.getPropertyName()) {
 					dispose();
 				}
 			}
 		});
 	}
+
 	/**
-	 * This method initializes cancelButton	
-	 * 	
-	 * @return javax.swing.JButton	
+	 * This method initializes cancelButton
+	 * 
+	 * @return javax.swing.JButton
 	 */
 	private JButton getCancelButton() {
 		if (cancelButton == null) {
@@ -152,4 +158,4 @@ public class StackViewCreationDialog extends JDialog {
 		}
 		return cancelButton;
 	}
-}  //  @jve:decl-index=0:visual-constraint="10,10"
+} // @jve:decl-index=0:visual-constraint="10,10"

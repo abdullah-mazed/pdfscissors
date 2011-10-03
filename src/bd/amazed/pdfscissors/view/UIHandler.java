@@ -14,10 +14,10 @@ public class UIHandler {
 	private int editingMode;
 	protected ArrayList<Rect> rects;
 	protected Rect selectedRect;
-	
+
 	private int page;
 	private boolean showMergeMode;
-	
+
 	private Vector<UIHandlerListener> listeners;
 
 	public UIHandler() {
@@ -64,11 +64,11 @@ public class UIHandler {
 	public ArrayList<Rect> getAllRects() {
 		return rects;
 	}
-	
+
 	public ArrayList<Rectangle> getAllRectangles() {
 		ArrayList<Rectangle> rectangles = new ArrayList<Rectangle>();
 		for (Rect rect : rects) {
-			rectangles.add(rect.bounds); //TODO rename rect by CropCell or something
+			rectangles.add(rect.bounds); // TODO rename rect by CropCell or something
 		}
 		return rectangles;
 	}
@@ -76,46 +76,46 @@ public class UIHandler {
 	public void deleteSelected() {
 		delete(selectedRect);
 	}
-	
+
 	public void splitHorizontalSelected(PdfPanel pdfPanel) {
 		if (selectedRect != null) {
 			Rectangle bounds = selectedRect.bounds;
 			Point location = bounds.getLocation();
-			
+
 			Rectangle leftBounds = new Rectangle(selectedRect.bounds.x, selectedRect.bounds.y, selectedRect.bounds.width / 2, selectedRect.bounds.height);
 			Rect leftRect = new Rect(location, this);
 			leftRect.addListener(pdfPanel);
 			leftRect.setBounds(leftBounds);
-			
+
 			Rectangle rightBounds = new Rectangle(selectedRect.bounds.x + selectedRect.bounds.width / 2, selectedRect.bounds.y, selectedRect.bounds.width / 2, selectedRect.bounds.height);
 			Rect rightRect = new Rect(location, this);
 			rightRect.addListener(pdfPanel);
 			rightRect.setBounds(rightBounds);
-			
+
 			int indexSelected = rects.indexOf(selectedRect);
-			delete(selectedRect);			
+			delete(selectedRect);
 			rects.add(indexSelected, rightRect);
 			rects.add(indexSelected, leftRect);
 		}
 	}
-	
+
 	public void splitVerticalSelected(PdfPanel pdfPanel) {
 		if (selectedRect != null) {
 			Rectangle bounds = selectedRect.bounds;
 			Point location = bounds.getLocation();
-			
+
 			Rectangle upBounds = new Rectangle(selectedRect.bounds.x, selectedRect.bounds.y, selectedRect.bounds.width, selectedRect.bounds.height / 2);
 			Rect upRect = new Rect(location, this);
 			upRect.addListener(pdfPanel);
 			upRect.setBounds(upBounds);
-			
+
 			Rectangle downBounds = new Rectangle(selectedRect.bounds.x, selectedRect.bounds.y + selectedRect.bounds.height / 2, selectedRect.bounds.width, selectedRect.bounds.height / 2);
 			Rect downRect = new Rect(location, this);
 			downRect.addListener(pdfPanel);
 			downRect.setBounds(downBounds);
-			
+
 			int indexSelected = rects.indexOf(selectedRect);
-			delete(selectedRect);			
+			delete(selectedRect);
 			rects.add(indexSelected, downRect);
 			rects.add(indexSelected, upRect);
 		}
@@ -127,14 +127,14 @@ public class UIHandler {
 			if (selectedRect == rect) {
 				selectedRect = null;
 			}
-			rect.fireEvent(null);			
+			rect.fireEvent(null);
 		}
 	}
-	
+
 	public int getRectCount() {
 		return rects.size();
 	}
-	
+
 	public int getIndexOf(Rect rect) {
 		return rects.indexOf(rect);
 	}
@@ -147,13 +147,13 @@ public class UIHandler {
 		rects.clear();
 		if (anyRect != null) {
 			anyRect.fireEvent(null); // if canvas repaints whole area once, that
-										// will do.
+			// will do.
 		}
 	}
 
 	public void reset() {
 		deleteAll();
-		selectedRect = null; //we are removing all rects, so all rects listners should vanish too.
+		selectedRect = null; // we are removing all rects, so all rects listners should vanish too.
 		page = 1;
 		showMergeMode = true;
 	}
@@ -161,7 +161,7 @@ public class UIHandler {
 	public int getPage() {
 		return page;
 	}
-	
+
 	public void setPage(int page) {
 		this.page = page;
 		firePageChanged();
@@ -174,27 +174,27 @@ public class UIHandler {
 	public boolean isShowMergedMode() {
 		return showMergeMode;
 	}
-	
+
 	public void addListener(UIHandlerListener listener) {
 		if (!listeners.contains(listener)) {
 			listeners.add(listener);
 		}
 	}
-	
+
 	public boolean removeListener(UIHandler listner) {
 		return listeners.remove(listner);
 	}
-	
-	public void removeAllListeners() { 
+
+	public void removeAllListeners() {
 		listeners.removeAllElements();
 	}
-	
+
 	private void fireEditModeChanged() {
 		for (UIHandlerListener listener : listeners) {
 			listener.editingModeChanged(editingMode);
 		}
 	}
-	
+
 	private void firePageChanged() {
 		for (UIHandlerListener listener : listeners) {
 			listener.pageChanged(page);
@@ -204,34 +204,34 @@ public class UIHandler {
 	public void equalizeWidthOfSelected(int viewWidth) {
 		int maxWidth = -1;
 		Rect maxWidthRect;
-		for (Rect rect: rects) {
+		for (Rect rect : rects) {
 			if (rect.bounds.width > maxWidth) {
 				maxWidth = rect.bounds.width;
 				maxWidthRect = rect;
 			}
 		}
-		for (Rect rect: rects) {
+		for (Rect rect : rects) {
 			rect.bounds.width = maxWidth;
 			if (rect.bounds.x + maxWidth > viewWidth) {
 				rect.bounds.x = viewWidth - maxWidth;
 			}
 		}
-		
+
 		if (rects.size() > 0) {
 			rects.get(0).fireEvent(null);
 		}
 	}
-	
+
 	public void equalizeHeightOfSelected(int viewHeight) {
 		int maxHeight = -1;
 		Rect maxWidthRect;
-		for (Rect rect: rects) {
+		for (Rect rect : rects) {
 			if (rect.bounds.height > maxHeight) {
 				maxHeight = rect.bounds.height;
 				maxWidthRect = rect;
 			}
 		}
-		for (Rect rect: rects) {
+		for (Rect rect : rects) {
 			rect.bounds.height = maxHeight;
 			if (rect.bounds.y + maxHeight > viewHeight) {
 				rect.bounds.y = viewHeight - maxHeight;

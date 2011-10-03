@@ -35,7 +35,7 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 
 	private String name = "DefaultPanel";
 	protected UIHandler uiHandler;
-	
+
 	public PdfPanel(UIHandler uiHandler) {
 		super();
 		this.uiHandler = uiHandler;
@@ -60,14 +60,14 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 		} else {
 			super.paintComponent(g);
 		}
-		
+
 		Rectangle clipRect = g.getClipBounds();
-		
+
 		Iterator<Rect> iter = uiHandler.getRectIterator();
 		while (iter.hasNext()) {
 			(iter.next()).draw(g, clipRect);
 		}
-		//whole page area
+		// whole page area
 		g.setColor(Color.BLACK);
 		g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
 
@@ -94,49 +94,48 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 			setSize(new Dimension(width, height));
 		}
 		invalidate();
-		repaint();		
+		repaint();
 	}
 
 	@Override
 	public void newPdfLoaded() {
 		debug("listening to new pdf loaded");
-//		updateSize();
+		// updateSize();
 		String filePath = Model.getInstance().getPdf().getNormalizedFile().getAbsolutePath();
 		System.out.println("url: " + filePath);
-        try {
-            openPdfFile(filePath);
-            // System.out.println ("page count: " + pdfDecoder.getPageCount ());
-            decodePage(uiHandler.getPage());
-            setPageParameters(1.0f, 1, 0); //values scaling (1=100%). page number
-            invalidate();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
+		try {
+			openPdfFile(filePath);
+			// System.out.println ("page count: " + pdfDecoder.getPageCount ());
+			decodePage(uiHandler.getPage());
+			setPageParameters(1.0f, 1, 0); // values scaling (1=100%). page number
+			invalidate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
 	public void pdfLoadFailed(File failedFile, Throwable cause) {
-		//nothing to do
+		// nothing to do
 	}
 
 	@Override
 	public void zoomChanged(double oldZoomFactor, double newZoomFactor) {
 		updateSize();
 	}
-		
 
 	@Override
 	public void clipboardCopy(boolean isCut, Rect onClipboard) {
-		
+
 	}
-	
+
 	@Override
 	public void clipboardPaste(boolean isCut, Rect onClipboard) {
 		if (onClipboard != null) {
 			try {
-				Rect cloned = (Rect)onClipboard.clone();
-				cloned.translate(5, 5, getWidth(), getHeight()); //a little to right bottom, so that user can see there is a new one on top
+				Rect cloned = (Rect) onClipboard.clone();
+				cloned.translate(5, 5, getWidth(), getHeight()); // a little to right bottom, so that user can see there
+				// is a new one on top
 				if (isCut) {
 					uiHandler.delete(onClipboard);
 				}
@@ -145,10 +144,10 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 			} catch (CloneNotSupportedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} //we dont modify the old			
+			} // we dont modify the old
 		}
 	}
-	
+
 	@Override
 	public void rectUpdated(Rect rect, Rectangle repaintArea) {
 		if (repaintArea != null) {
@@ -168,9 +167,8 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 		return null;
 	}
 
-	
 	public void updateCursor() {
-		debug("Updating cursor");//XXX
+		debug("Updating cursor");// XXX
 		if (uiHandler.getEditingMode() == UIHandler.EDIT_MODE_DRAW) {
 			setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
 		} else {
@@ -186,7 +184,7 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 
 	@Override
 	public void pageChanged(int index) {
-	
+
 	}
 
 	protected class MouseHandler extends MouseAdapter implements MouseMotionListener {
@@ -196,13 +194,11 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 		private static final int DRAG_CREATE = 1;
 		private static final int DRAG_RESIZE = 2;
 		private static final int DRAG_MOVE = 3;
-		
 
 		/**
-		 * When the mouse is pressed we need to figure out what action to take.
-		 * If the tool mode is arrow, the click might be a select, move or
-		 * reisze. If the tool mode is one of the rects, the click initiates
-		 * creation of a new rect.
+		 * When the mouse is pressed we need to figure out what action to take. If the tool mode is arrow, the click
+		 * might be a select, move or reisze. If the tool mode is one of the rects, the click initiates creation of a
+		 * new rect.
 		 */
 		public void mousePressed(MouseEvent event) {
 			Rect clicked = null;
@@ -210,15 +206,14 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 
 			if (uiHandler.getEditingMode() == uiHandler.EDIT_MODE_SELECT) {
 				// first, determine if click was on resize knob of selected rect
-				if (uiHandler.getSelectedRect() != null
-						&& (dragAnchor = uiHandler.getSelectedRect().getAnchorForResize(curPt)) != null) {
+				if (uiHandler.getSelectedRect() != null && (dragAnchor = uiHandler.getSelectedRect().getAnchorForResize(curPt)) != null) {
 					dragStatus = DRAG_RESIZE; // drag will resize this rect
-				} else if ((clicked = getRectAt(curPt)) != null) { //if not check if any rect was clicked
+				} else if ((clicked = getRectAt(curPt)) != null) { // if not check if any rect was clicked
 					uiHandler.setSelectedRect(clicked);
 					dragStatus = DRAG_MOVE; // drag will move this rect
 					dragAnchor = curPt;
 				} else { // else this was a click in empty area, deselect
-							// selected rect,
+					// selected rect,
 					uiHandler.setSelectedRect(null);
 					dragStatus = DRAG_NONE; // drag does nothing in this case
 				}
@@ -233,91 +228,93 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 		}
 
 		/**
-		 * As the mouse is dragged, our listener will receive periodic updates
-		 * as mouseDragged events. When we get an update position, we update the
-		 * move/resize event that is in progress.
+		 * As the mouse is dragged, our listener will receive periodic updates as mouseDragged events. When we get an
+		 * update position, we update the move/resize event that is in progress.
 		 */
 		public void mouseDragged(MouseEvent event) {
 			Point pointer = event.getPoint();
 			switch (dragStatus) {
 			case DRAG_MOVE:
-				uiHandler.getSelectedRect().translate(pointer.x - dragAnchor.x,
-						pointer.y - dragAnchor.y, getWidth(), getHeight());
+				uiHandler.getSelectedRect().translate(pointer.x - dragAnchor.x, pointer.y - dragAnchor.y, getWidth(), getHeight());
 				dragAnchor = pointer; // update for next dragged event
 				break;
 			case DRAG_CREATE:
 			case DRAG_RESIZE:
-				uiHandler.getSelectedRect().resize(dragAnchor, pointer,
-						getWidth(), getHeight());
+				uiHandler.getSelectedRect().resize(dragAnchor, pointer, getWidth(), getHeight());
 				break;
 			}
 		}
-		
+
 		@Override
 		public void mouseMoved(MouseEvent event) {
 			Point pointer = event.getPoint();
 			if (uiHandler.getEditingMode() == UIHandler.EDIT_MODE_SELECT) { // select mode
-				 if(getRectAt(pointer) != null) { //move
-					 setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-				 } else if(uiHandler.getSelectedRect() != null) { //resize
-					 int whichCornerbox = uiHandler.getSelectedRect().getCornerboxContainingPoint(pointer);
-						if (whichCornerbox != Rect.CORNER_NONE) {
-							switch (whichCornerbox) {
-							case Rect.CORNER_TOP_LEFT:
-								setCursor(Cursor.getPredefinedCursor(Cursor.NW_RESIZE_CURSOR));
-								break;
-							case Rect.CORNER_TOP_RIGHT:
-								setCursor(Cursor.getPredefinedCursor(Cursor.NE_RESIZE_CURSOR));
-								break;
-							case Rect.CORNER_BOTTOM_LEFT:
-								setCursor(Cursor.getPredefinedCursor(Cursor.SW_RESIZE_CURSOR));
-								break;
-							case Rect.CORNER_BUTTOM_RIGHT:
-								setCursor(Cursor.getPredefinedCursor(Cursor.SE_RESIZE_CURSOR));
-								break;
-							}
-						} else {
-							setCursor(Cursor.getDefaultCursor());
+				if (getRectAt(pointer) != null) { // move
+					setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+				} else if (uiHandler.getSelectedRect() != null) { // resize
+					int whichCornerbox = uiHandler.getSelectedRect().getCornerboxContainingPoint(pointer);
+					if (whichCornerbox != Rect.CORNER_NONE) {
+						switch (whichCornerbox) {
+						case Rect.CORNER_TOP_LEFT:
+							setCursor(Cursor.getPredefinedCursor(Cursor.NW_RESIZE_CURSOR));
+							break;
+						case Rect.CORNER_TOP_RIGHT:
+							setCursor(Cursor.getPredefinedCursor(Cursor.NE_RESIZE_CURSOR));
+							break;
+						case Rect.CORNER_BOTTOM_LEFT:
+							setCursor(Cursor.getPredefinedCursor(Cursor.SW_RESIZE_CURSOR));
+							break;
+						case Rect.CORNER_BUTTOM_RIGHT:
+							setCursor(Cursor.getPredefinedCursor(Cursor.SE_RESIZE_CURSOR));
+							break;
 						}
-				 } else {//normal
-					 setCursor(Cursor.getDefaultCursor());
-				 }
+					} else {
+						setCursor(Cursor.getDefaultCursor());
+					}
+				} else {// normal
+					setCursor(Cursor.getDefaultCursor());
+				}
 			} else if (uiHandler.getEditingMode() == UIHandler.EDIT_MODE_DRAW) {
-				setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));				
+				setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
 			} else {
 				setCursor(Cursor.getDefaultCursor());
 			}
 		}
-		
+
 		@Override
 		public void mouseReleased(MouseEvent e) {
 			Rect selectedRect = uiHandler.getSelectedRect();
-			if (selectedRect != null && selectedRect.bounds != null &&(selectedRect.bounds.getWidth() <= 0 || selectedRect.bounds.getHeight() <= 10)) { //TOO small, we dont add those
+			if (selectedRect != null && selectedRect.bounds != null && (selectedRect.bounds.getWidth() <= 0 || selectedRect.bounds.getHeight() <= 10)) { // TOO
+				// small,
+				// we
+				// dont
+				// add
+				// those
 				uiHandler.deleteSelected();
 			}
 			if (uiHandler.getEditingMode() == UIHandler.EDIT_MODE_DRAW) {
 				uiHandler.setEditingMode(UIHandler.EDIT_MODE_SELECT);
 			}
 		}
-		
+
 		@Override
 		public void mouseEntered(MouseEvent e) {
 			super.mouseEntered(e);
 			updateCursor();
 		}
-		
+
 		@Override
-		public void mouseExited(MouseEvent e) {		
+		public void mouseExited(MouseEvent e) {
 			super.mouseExited(e);
-			setCursor(Cursor.getDefaultCursor());	
+			setCursor(Cursor.getDefaultCursor());
 		}
-		
+
 		public void showPopup(java.awt.event.MouseEvent evt) {
-	        if (evt.isPopupTrigger()) {
-	            
-	        }
-	 
-	    }
+			if (evt.isPopupTrigger()) {
+
+			}
+
+		}
 	}
 
 }

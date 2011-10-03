@@ -18,35 +18,34 @@ import javax.swing.UnsupportedLookAndFeelException;
 import bd.amazed.pdfscissors.view.MainFrame;
 
 public class PdfscissorsMain {
-    
-    public static void main(String args[]) {
-        if (args == null)
-            args = new String[0];
-        new PdfscissorsMain().run();
-    }
-    
-    public void run() {
-    	setLookAndFeel();
-    	java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-               new MainFrame().setVisible(true);	
-            }
-        });
-    }
-    
-    private static void setLookAndFeel() {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (ClassNotFoundException ex) {
-            Logger.getLogger(PdfscissorsMain.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            Logger.getLogger(PdfscissorsMain.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            Logger.getLogger(PdfscissorsMain.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (UnsupportedLookAndFeelException ex) {
-            Logger.getLogger(PdfscissorsMain.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-    
+
+	public static void main(String args[]) {
+		if (args == null)
+			args = new String[0];
+		new PdfscissorsMain().run();
+	}
+
+	public void run() {
+		setLookAndFeel();
+		java.awt.EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				new MainFrame().setVisible(true);
+			}
+		});
+	}
+
+	private static void setLookAndFeel() {
+		try {
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch (ClassNotFoundException ex) {
+			Logger.getLogger(PdfscissorsMain.class.getName()).log(Level.SEVERE, null, ex);
+		} catch (InstantiationException ex) {
+			Logger.getLogger(PdfscissorsMain.class.getName()).log(Level.SEVERE, null, ex);
+		} catch (IllegalAccessException ex) {
+			Logger.getLogger(PdfscissorsMain.class.getName()).log(Level.SEVERE, null, ex);
+		} catch (UnsupportedLookAndFeelException ex) {
+			Logger.getLogger(PdfscissorsMain.class.getName()).log(Level.SEVERE, null, ex);
+		}
+	}
 
 }

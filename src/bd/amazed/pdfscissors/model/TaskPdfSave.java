@@ -26,18 +26,18 @@ public class TaskPdfSave extends SwingWorker<Boolean, Void> {
 	private int viewWidth;
 	private int viewHeight;
 	private Component owner;
-	
+
 	ProgressMonitor progressMonitor;
-	public TaskPdfSave(PdfFile pdfFile, File targetFile, ArrayList<Rectangle> cropCells, int viewWidth, int viewHeight, Component owner) {
+
+	public TaskPdfSave(PdfFile pdfFile, File targetFile, ArrayList<Rectangle> cropCells, int viewWidth, int viewHeight,
+			Component owner) {
 		this.pdfFile = pdfFile;
 		this.targetFile = targetFile;
 		this.cropCells = cropCells;
 		this.owner = owner;
 		this.viewWidth = viewWidth;
 		this.viewHeight = viewHeight;
-		progressMonitor = new ProgressMonitor(owner,
-                "Saving " + targetFile.getName() + "...",
-                "", 0, 100);
+		progressMonitor = new ProgressMonitor(owner, "Saving " + targetFile.getName() + "...", "", 0, 100);
 	}
 
 	@Override
@@ -52,10 +52,10 @@ public class TaskPdfSave extends SwingWorker<Boolean, Void> {
 	protected void done() {
 		super.done();
 		progressMonitor.close();
-		if (! progressMonitor.isCanceled()) {
-			
+		if (!progressMonitor.isCanceled()) {
+
 			try {
-				if(this.get()) {
+				if (this.get()) {
 					if (Desktop.isDesktopSupported()) {
 						progressMonitor.setNote("Cropping done! Opening cropped file...");
 						try {
@@ -68,21 +68,19 @@ public class TaskPdfSave extends SwingWorker<Boolean, Void> {
 						debug("Hmm.. cannot open the cropped file. Desktop.isDesktopSupported() is false");
 					}
 				} else {
-					throw new ExecutionException("Failed to save!", null); //I guess this will never happen
+					throw new ExecutionException("Failed to save!", null); // I guess this will never happen
 				}
 			} catch (InterruptedException e) {
-				e.printStackTrace(); //ignore
+				e.printStackTrace(); // ignore
 			} catch (ExecutionException e) {
 				JOptionPane.showMessageDialog(owner, "Failed to save image ...\nDetails:" + e.getCause());
 				e.printStackTrace();
-			} 
+			}
 		}
 	}
 
 	private void debug(String string) {
 		System.out.println("TaskPdfSave:" + string);
 	}
-	
+
 }
-
-

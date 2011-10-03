@@ -22,18 +22,18 @@ public class Rect implements Cloneable {
 	public static final int CORNER_BOTTOM_LEFT = 1;
 	public static final int CORNER_BUTTOM_RIGHT = 2;
 	public static final int CORNER_TOP_RIGHT = 3;
-	
 
 	protected static final Color COLOR_SELECTED_RECT = new Color(0x55000077, true);
 	protected static final Color COLOR_RECT = new Color(0x55555555, true);
-	private static Stroke dashStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{9}, 0);
+	private static Stroke dashStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] { 9 }, 0);
 	private static Font font;
-	
-	protected Vector<RectChangeListener> listeners = new Vector<RectChangeListener>() ;
+
+	protected Vector<RectChangeListener> listeners = new Vector<RectChangeListener>();
 	private UIHandler uiHandler;
-	
+
 	/**
 	 * Initial width, height is zero.
+	 * 
 	 * @param start starting point
 	 */
 	public Rect(Point start, UIHandler uiHandler) {
@@ -61,8 +61,7 @@ public class Rect implements Cloneable {
 		updateCanvas(oldBounds.union(bounds));
 	}
 
-	public void resize(Point anchor, Point end, int containerWidth,
-			int containerHeight) {
+	public void resize(Point anchor, Point end, int containerWidth, int containerHeight) {
 		Rectangle newRect = new Rectangle(anchor);
 		newRect.add(end); // creates smallest rectange which includes both anchor & end
 		if (isRectInsideContainer(newRect, containerWidth, containerHeight)) {
@@ -79,8 +78,7 @@ public class Rect implements Cloneable {
 	}
 
 	private boolean isRectInsideContainer(Rectangle newRect, int containerWidth, int containerHeight) {
-		return newRect.x >= 0 && newRect.x + newRect.width <= containerWidth
-				&& newRect.y >= 0 && newRect.y + newRect.height <= containerHeight;
+		return newRect.x >= 0 && newRect.x + newRect.width <= containerWidth && newRect.y >= 0 && newRect.y + newRect.height <= containerHeight;
 
 	}
 
@@ -110,7 +108,6 @@ public class Rect implements Cloneable {
 		updateCanvas(areaOfChange, isSelected);
 	}
 
-	
 	public void draw(Graphics g, Rectangle clipRect) {
 		if (!bounds.intersects(clipRect))
 			return;
@@ -120,8 +117,8 @@ public class Rect implements Cloneable {
 			g.setColor(COLOR_RECT);
 		}
 		g.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-		
-		//draw order number
+
+		// draw order number
 		if (isSelected) {
 			g.setColor(Color.BLUE);
 		} else {
@@ -132,8 +129,8 @@ public class Rect implements Cloneable {
 		}
 		g.setFont(font);
 		g.drawString(String.valueOf(uiHandler.getIndexOf(this) + 1), bounds.x + 5, bounds.y + g.getFont().getSize() + 2);
-		
-		//draw dashed border
+
+		// draw dashed border
 		g.setColor(Color.BLACK);
 		Graphics2D g2d = (Graphics2D) g;
 		Stroke oldStroke = g2d.getStroke();
@@ -147,31 +144,24 @@ public class Rect implements Cloneable {
 		}
 	}
 
-	
 	public boolean inside(Point pt) {
 		return bounds.contains(pt);
 	}
-	
+
 	protected Rectangle[] getCornerboxRects() {
 		Rectangle[] cornerboxs = new Rectangle[4];
-		cornerboxs[CORNER_TOP_LEFT] = new Rectangle(bounds.x - CORNERBOX_SIZE / 2, bounds.y
-				- CORNERBOX_SIZE / 2, CORNERBOX_SIZE, CORNERBOX_SIZE);
-		cornerboxs[CORNER_BOTTOM_LEFT] = new Rectangle(bounds.x - CORNERBOX_SIZE / 2, bounds.y
-				+ bounds.height - CORNERBOX_SIZE / 2, CORNERBOX_SIZE, CORNERBOX_SIZE);
-		cornerboxs[CORNER_BUTTOM_RIGHT] = new Rectangle(bounds.x + bounds.width - CORNERBOX_SIZE / 2,
-				bounds.y + bounds.height - CORNERBOX_SIZE / 2, CORNERBOX_SIZE, CORNERBOX_SIZE);
-		cornerboxs[CORNER_TOP_RIGHT] = new Rectangle(bounds.x + bounds.width - CORNERBOX_SIZE / 2,
-				bounds.y - CORNERBOX_SIZE / 2, CORNERBOX_SIZE, CORNERBOX_SIZE);
+		cornerboxs[CORNER_TOP_LEFT] = new Rectangle(bounds.x - CORNERBOX_SIZE / 2, bounds.y - CORNERBOX_SIZE / 2, CORNERBOX_SIZE, CORNERBOX_SIZE);
+		cornerboxs[CORNER_BOTTOM_LEFT] = new Rectangle(bounds.x - CORNERBOX_SIZE / 2, bounds.y + bounds.height - CORNERBOX_SIZE / 2, CORNERBOX_SIZE, CORNERBOX_SIZE);
+		cornerboxs[CORNER_BUTTOM_RIGHT] = new Rectangle(bounds.x + bounds.width - CORNERBOX_SIZE / 2, bounds.y + bounds.height - CORNERBOX_SIZE / 2, CORNERBOX_SIZE, CORNERBOX_SIZE);
+		cornerboxs[CORNER_TOP_RIGHT] = new Rectangle(bounds.x + bounds.width - CORNERBOX_SIZE / 2, bounds.y - CORNERBOX_SIZE / 2, CORNERBOX_SIZE, CORNERBOX_SIZE);
 		return cornerboxs;
 	}
 
 	/**
-	 * Helper method to determine if a point is within one of the resize corner
-	 * cornerboxs. If not selected, we have no resize cornerboxs, so it can't have been a
-	 * click on one. Otherwise, we calculate the cornerbox rects and then check
-	 * whether the point falls in one of them. The return value is one of NW,
-	 * NE, SW, SE constants depending on which cornerbox is found, or NONE if the
-	 * click doesn't fall within any cornerbox.
+	 * Helper method to determine if a point is within one of the resize corner cornerboxs. If not selected, we have no
+	 * resize cornerboxs, so it can't have been a click on one. Otherwise, we calculate the cornerbox rects and then
+	 * check whether the point falls in one of them. The return value is one of NW, NE, SW, SE constants depending on
+	 * which cornerbox is found, or NONE if the click doesn't fall within any cornerbox.
 	 */
 	public int getCornerboxContainingPoint(Point pt) {
 		if (!isSelected) // if we aren't selected, the cornerboxs aren't showing and
@@ -186,16 +176,13 @@ public class Rect implements Cloneable {
 	}
 
 	/**
-	 * Method used by PdfPanel to determine if a mouse click is starting a
-	 * resize event. In order for it to be a resize, the click must have been
-	 * within one of the cornerbox rects (checked by the helper method
-	 * getCornerboxContainingPoint) and if so, we return the "anchor" ie the cornerbox
-	 * opposite this corner that will remain fixed as the user drags the
-	 * resizing cornerbox of the other corner around. During the drag actions of a
-	 * resize, that fixed anchor point and the current mouse point will be
-	 * passed to the resize method, which will reset the bounds in response to
-	 * the movement. If the mouseLocation wasn't a click in a cornerbox and thus not
-	 * the beginning of a resize event, null is returned.
+	 * Method used by PdfPanel to determine if a mouse click is starting a resize event. In order for it to be a resize,
+	 * the click must have been within one of the cornerbox rects (checked by the helper method
+	 * getCornerboxContainingPoint) and if so, we return the "anchor" ie the cornerbox opposite this corner that will
+	 * remain fixed as the user drags the resizing cornerbox of the other corner around. During the drag actions of a
+	 * resize, that fixed anchor point and the current mouse point will be passed to the resize method, which will reset
+	 * the bounds in response to the movement. If the mouseLocation wasn't a click in a cornerbox and thus not the
+	 * beginning of a resize event, null is returned.
 	 */
 	public Point getAnchorForResize(Point mouseLocation) {
 		int whichCornerbox = getCornerboxContainingPoint(mouseLocation);
@@ -214,13 +201,13 @@ public class Rect implements Cloneable {
 		}
 		return null;
 	}
-	
+
 	public Rectangle getRectangleBound() {
 		return bounds;
 	}
-	
+
 	@Override
-	public Object clone() throws CloneNotSupportedException {	
+	public Object clone() throws CloneNotSupportedException {
 		return super.clone();
 	}
 }

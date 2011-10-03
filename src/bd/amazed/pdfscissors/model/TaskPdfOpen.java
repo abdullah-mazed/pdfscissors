@@ -22,7 +22,7 @@ public class TaskPdfOpen extends SwingWorker<BufferedImage, Void> {
 	private boolean isCancelled;
 	PdfCropper cropper = null;
 	private Component owner;
-	
+
 	public TaskPdfOpen(File file, Component owner) {
 		this.originalFile = file;
 		isCancelled = false;
@@ -35,7 +35,7 @@ public class TaskPdfOpen extends SwingWorker<BufferedImage, Void> {
 		debug("Normalzing pdf...");
 		pdfFile = PdfCropper.getNormalizedPdf(originalFile);
 		pdfFile.getNormalizedFile().deleteOnExit();
-		
+
 		debug("Extracting pdf image...");
 		try {
 			cropper = new PdfCropper(pdfFile.getNormalizedFile());
@@ -44,7 +44,7 @@ public class TaskPdfOpen extends SwingWorker<BufferedImage, Void> {
 			}
 			setProgress(0);
 			BufferedImage image = cropper.getImage(new PropertyChangeListener() {
-				
+
 				@Override
 				public void propertyChange(PropertyChangeEvent evt) {
 					firePropertyChange(evt.getPropertyName(), evt.getOldValue(), evt.getNewValue());
@@ -63,10 +63,10 @@ public class TaskPdfOpen extends SwingWorker<BufferedImage, Void> {
 			}
 		}
 	}
-	
+
 	public void cancel() {
 		isCancelled = true;
-		if(this.cropper != null) {
+		if (this.cropper != null) {
 			cropper.cancel();
 		}
 	}
@@ -76,18 +76,18 @@ public class TaskPdfOpen extends SwingWorker<BufferedImage, Void> {
 		super.done();
 		setProgress(100);
 		firePropertyChange("done", false, true);
-		if (! isCancelled) {
+		if (!isCancelled) {
 			BufferedImage image = null;
 			try {
 				image = this.get();
-				if (image != null && ! isCancelled) {
+				if (image != null && !isCancelled) {
 					pdfFile.setPreviewImage(image);
 					Model.getInstance().setPdf(pdfFile);
 				} else {
 					Model.getInstance().setPdfLoadFailed(originalFile, new org.jpedal.exception.PdfException("Failed to extract image. Check if PDF is password protected or corrupted."));
 				}
 			} catch (InterruptedException e) {
-				e.printStackTrace(); //ignore
+				e.printStackTrace(); // ignore
 			} catch (ExecutionException e) {
 				Model.getInstance().setPdfLoadFailed(originalFile, e.getCause());
 			}
@@ -97,16 +97,13 @@ public class TaskPdfOpen extends SwingWorker<BufferedImage, Void> {
 	private void debug(String string) {
 		System.out.println("TaskPdfOpen:" + string);
 	}
-	
-	
+
 	/**
-	 * check if encryption present and acertain password, return true if content
-	 * accessable
+	 * check if encryption present and acertain password, return true if content accessable
 	 * 
 	 * @throws org.jpedal.exception.PdfException
 	 */
-	private boolean checkEncryption() throws org.jpedal.exception.PdfException,
-			PdfException {
+	private boolean checkEncryption() throws org.jpedal.exception.PdfException, PdfException {
 
 		// check if file is encrypted
 		if (cropper.isEncrypted()) {
@@ -116,8 +113,7 @@ public class TaskPdfOpen extends SwingWorker<BufferedImage, Void> {
 			while (!cropper.isFileViewable()) {
 
 				/** popup window if password needed */
-				String password = JOptionPane.showInputDialog(owner,
-						"Please enter password");
+				String password = JOptionPane.showInputDialog(owner, "Please enter password");
 
 				/** try and reopen with new password */
 				if (password != null) {
