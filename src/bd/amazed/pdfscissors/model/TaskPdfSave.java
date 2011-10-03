@@ -20,7 +20,7 @@ import com.itextpdf.text.DocumentException;
 
 public class TaskPdfSave extends SwingWorker<Boolean, Void> {
 
-	private File originalFile;
+	private PdfFile pdfFile;
 	private File targetFile;
 	private ArrayList<Rectangle> cropCells;
 	private int viewWidth;
@@ -28,8 +28,8 @@ public class TaskPdfSave extends SwingWorker<Boolean, Void> {
 	private Component owner;
 	
 	ProgressMonitor progressMonitor;
-	public TaskPdfSave(File originalFile, File targetFile, ArrayList<Rectangle> cropCells, int viewWidth, int viewHeight, Component owner) {
-		this.originalFile = originalFile;
+	public TaskPdfSave(PdfFile pdfFile, File targetFile, ArrayList<Rectangle> cropCells, int viewWidth, int viewHeight, Component owner) {
+		this.pdfFile = pdfFile;
 		this.targetFile = targetFile;
 		this.cropCells = cropCells;
 		this.owner = owner;
@@ -43,7 +43,7 @@ public class TaskPdfSave extends SwingWorker<Boolean, Void> {
 	@Override
 	protected Boolean doInBackground() throws Exception {
 		debug("Cropping to " + targetFile + "...");
-		PdfCropper.cropPdf(originalFile, targetFile, cropCells, viewWidth, viewHeight, progressMonitor);
+		PdfCropper.cropPdf(pdfFile, targetFile, cropCells, viewWidth, viewHeight, progressMonitor);
 		debug("Cropping success : " + targetFile);
 		return true;
 	}

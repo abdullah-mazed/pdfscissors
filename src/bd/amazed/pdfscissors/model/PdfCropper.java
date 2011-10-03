@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream.GetField;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -124,7 +125,7 @@ public class PdfCropper {
     /**
      * Normalizing takes care of different widths / heights of pages by setting max width, height to all pages.a
      */
-	public static File getNormalizedPdf(File originalFile) throws DocumentException, IOException
+	public static PdfFile getNormalizedPdf(File originalFile) throws DocumentException, IOException
 	{
 		PdfReader reader = null;
 		Document doc = null;
@@ -145,7 +146,23 @@ public class PdfCropper {
 				cb.addTemplate(page, Scale, 0, 0, Scale, 0, 0);
 				doc.newPage();
 			}
-	        return tempFile;
+			
+			//put the information, like author name etc.
+			HashMap<String, String> info = reader.getInfo();
+			String keywords = info.get("Keywords");
+			if (keywords == null) {
+				keywords = "";
+			}
+			if (keywords.length() > 0 && !keywords.endsWith(" ")) {
+				keywords += " ";
+			}
+			keywords += "Cropped by pdfscissors.com";
+			info.put("Keywords", keywords);
+
+			PdfFile pdfFile =  new PdfFile(tempFile, originalFile);
+			pdfFile.setPdfInfo(info);
+			
+			return pdfFile;
 		
 		} finally {
 			if (doc != null) {
@@ -179,8 +196,11 @@ public class PdfCropper {
 
     
 	
-	public static void cropPdf(File originalFile, File targetFile, ArrayList<java.awt.Rectangle> rects, int viewWidth, int viewHeight, ProgressMonitor progressMonitor) throws IOException, DocumentException {
-
+	public static void cropPdf(PdfFile pdfFile, File targetFile, ArrayList<java.awt.Rectangle> rects, int viewWidth, int viewHeight, ProgressMonitor progressMonitor) throws IOException, DocumentException {
+		
+		File originalFile = pdfFile.getOriginalFile();
+		HashMap<String, String> pdfInfo = pdfFile.getPdfInfo();
+		 
 		//convert to actual rectangles
 		PdfReader reader = new PdfReader(originalFile.getAbsolutePath());
 		
@@ -266,9 +286,7 @@ public class PdfCropper {
 	
 			stamper = new PdfStamper(reader, new FileOutputStream(targetFile));
 			int pageCount = reader.getNumberOfPages();
-			BaseFont font = BaseFont.createFont(BaseFont.HELVETICA,BaseFont.WINANSI, BaseFont.NOT_EMBEDDED);
-			int fontSize = 6;
-			String littleNote = "Cropped by pdfscissors.com";
+
 			for (int i = 0; i < pageCount;) {
 				++i;
 				// http://stackoverflow.com/questions/4089757/how-do-i-resize-an-existing-pdf-with-coldfusion-itext
@@ -287,15 +305,11 @@ public class PdfCropper {
 				pdfDictionary.put(PdfName.MEDIABOX, cropCell);
 				pdfDictionary.put(PdfName.TRIMBOX, cropCell);
 				pdfDictionary.put(PdfName.BLEEDBOX, cropCell);
-				if (i == 1 || i == pageCount) {
-					PdfContentByte directcontent = stamper.getOverContent(i);
-					directcontent.beginText();
-					directcontent.setFontAndSize(font, 8);
-					directcontent.showTextAligned(Element.ALIGN_LEFT, littleNote,
-							awtRect.x + 2, awtRect.y + fontSize, 0);
-					directcontent.endText();
-				}
+				
 			}
+			
+			//put the information, like author name etc.
+			stamper.setMoreInfo(pdfInfo);
 		} finally {
 			if (document != null) {
 				document.close();

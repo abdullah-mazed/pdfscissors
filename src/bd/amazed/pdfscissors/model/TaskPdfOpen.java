@@ -17,8 +17,8 @@ import com.itextpdf.text.pdf.PdfException;
 
 public class TaskPdfOpen extends SwingWorker<BufferedImage, Void> {
 
+	private PdfFile pdfFile;
 	private File originalFile;
-	private File normalizedFile;
 	private boolean isCancelled;
 	PdfCropper cropper = null;
 	private Component owner;
@@ -33,12 +33,12 @@ public class TaskPdfOpen extends SwingWorker<BufferedImage, Void> {
 	protected BufferedImage doInBackground() throws Exception {
 
 		debug("Normalzing pdf...");
-		normalizedFile = PdfCropper.getNormalizedPdf(originalFile);
-		normalizedFile.deleteOnExit();
+		pdfFile = PdfCropper.getNormalizedPdf(originalFile);
+		pdfFile.getNormalizedFile().deleteOnExit();
 		
 		debug("Extracting pdf image...");
 		try {
-			cropper = new PdfCropper(normalizedFile);
+			cropper = new PdfCropper(pdfFile.getNormalizedFile());
 			if (!checkEncryption()) {
 				JOptionPane.showMessageDialog(owner, "Sorry, your pdf is protected, cannot continue");
 			}
@@ -52,9 +52,9 @@ public class TaskPdfOpen extends SwingWorker<BufferedImage, Void> {
 			});
 			setProgress(100);
 			if (image == null) {
-				debug("Ups.. null image for " + normalizedFile);
+				debug("Ups.. null image for " + pdfFile.getNormalizedFile());
 			} else {
-				debug("PDF loaded " + normalizedFile);
+				debug("PDF loaded " + pdfFile.getNormalizedFile());
 			}
 			return image;
 		} finally {
@@ -81,7 +81,8 @@ public class TaskPdfOpen extends SwingWorker<BufferedImage, Void> {
 			try {
 				image = this.get();
 				if (image != null && ! isCancelled) {
-					Model.getInstance().setPdf(normalizedFile, originalFile, image);
+					pdfFile.setPreviewImage(image);
+					Model.getInstance().setPdf(pdfFile);
 				} else {
 					Model.getInstance().setPdfLoadFailed(originalFile, new org.jpedal.exception.PdfException("Failed to extract image. Check if PDF is password protected or corrupted."));
 				}

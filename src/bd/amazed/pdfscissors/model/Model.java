@@ -1,21 +1,12 @@
 package bd.amazed.pdfscissors.model;
 
-import java.awt.Dimension;
-import java.awt.Image;
-import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Vector;
-
-import org.jpedal.exception.PdfException;
-import org.jpedal.objects.PdfPageData;
 
 import bd.amazed.pdfscissors.view.Rect;
 
@@ -27,12 +18,7 @@ public class Model {
 	
 	private Vector<ModelListener> modelListeners;
 
-	// we basically read from a temp normalized file. Original file reference is just stored.
-	private File currentFile;
-	private File originalFile;
-	private BufferedImage previewImage;
-	/** When zoom factor is not 1.*/
-	private Image scaledPreviewImage; 
+	private PdfFile currentPdf = PdfFile.NullPdf();
 
 	private double zoomFactor;
 	
@@ -73,38 +59,18 @@ public class Model {
 	 * @param originalFile original file
 	 * @param previewImage previewImage, must not be null
 	 */
-	public void setPdf(File file, File originalFile, BufferedImage previewImage) {
-		if(file == null) {
-			throw new IllegalArgumentException("Cannot set null file to model");
+	public void setPdf(PdfFile pdfFile) {
+		if (currentPdf == null) {
+			throw new IllegalArgumentException("Cannot set null pdf file");
 		}
-		if (previewImage == null) {
-			throw new IllegalArgumentException("Cannot set null preview image to model");
-		}
-		currentFile = file;
-		this.originalFile = originalFile;
-		this.previewImage = previewImage;
+		this.currentPdf = pdfFile;
 		fireNewPdf();
 	}
 	
-	/**
-	 * 
-	 * @return current file or null
-	 */
-	public File getCurrentFile() {
-		return currentFile;
+	public PdfFile getPdf() {
+		return this.currentPdf;
 	}
 	
-	public File getOriginalFile() {
-		return originalFile;
-	}
-	
-	/**
-	 * 
-	 * @return preview image or null
-	 */
-	public BufferedImage getPreviewImage() {
-		return previewImage;
-	}
 
 	/**
 	 * Notify model that some pdf loading has failed.
@@ -144,13 +110,14 @@ public class Model {
         if (this.zoomFactor != zoomFactor) {
         	double oldZoom = this.zoomFactor;
             this.zoomFactor = zoomFactor;
+            BufferedImage previewImage = currentPdf.getPreviewImage();
             if (zoomFactor == 1) {
-                scaledPreviewImage = previewImage;                
+                currentPdf.setScaledPreviewImage(previewImage);
             } else {
                 if (previewImage != null) {
-                    scaledPreviewImage = previewImage.getScaledInstance((int)(previewImage.getWidth() * zoomFactor), (int)(previewImage.getHeight() * zoomFactor), BufferedImage.SCALE_FAST);                    
+                    currentPdf.setScaledPreviewImage(previewImage.getScaledInstance((int)(previewImage.getWidth() * zoomFactor), (int)(previewImage.getHeight() * zoomFactor), BufferedImage.SCALE_FAST));                    
                 } else {
-                    scaledPreviewImage = null; //if preview image is null, so is scaled
+                   currentPdf.setScaledPreviewImage(null);//if preview image is null, so is scaled
                 }
             }
             fireZoomChanged(oldZoom, zoomFactor);
@@ -162,10 +129,6 @@ public class Model {
 
 	public double getZoomFactor() {
 		return zoomFactor;
-	}
-
-	public Image getScaledPreivewImage() {
-		return scaledPreviewImage;
 	}
 
 	protected void fireNewPdf() {

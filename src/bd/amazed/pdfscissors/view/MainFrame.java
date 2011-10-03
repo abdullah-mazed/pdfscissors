@@ -6,6 +6,7 @@ package bd.amazed.pdfscissors.view;
 import bd.amazed.pdfscissors.model.Model;
 import bd.amazed.pdfscissors.model.ModelListener;
 import bd.amazed.pdfscissors.model.PdfCropper;
+import bd.amazed.pdfscissors.model.PdfFile;
 import bd.amazed.pdfscissors.model.TaskPdfOpen;
 import bd.amazed.pdfscissors.model.TaskPdfSave;
 import bd.amazed.pdfscissors.model.TempFileManager;
@@ -222,7 +223,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	 * Enable/disable buttons etc which should be disabled when there is no file.
 	 */
 	private void updateOpenFileDependents() {
-		boolean shouldEnable = Model.getInstance().getCurrentFile() != null;
+		boolean shouldEnable = Model.getInstance().getPdf().getNormalizedFile() != null;
 		for (Component component : openFileDependendComponents) {
 			component.setEnabled(shouldEnable);
 		}
@@ -471,7 +472,7 @@ public class MainFrame extends JFrame implements ModelListener {
 		
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileFilter(createFileFilter());
-		File originalPdf = Model.getInstance().getOriginalFile();
+		File originalPdf = Model.getInstance().getPdf().getOriginalFile();
 		// find file name without extension
 		String filePath = originalPdf.getAbsolutePath();
 		int dot = filePath.lastIndexOf('.');
@@ -491,13 +492,13 @@ public class MainFrame extends JFrame implements ModelListener {
 					return; // overwrite not allowed by user
 				}
 			}
-			launchSaveTask(Model.getInstance().getCurrentFile(), targetFile);
+			launchSaveTask(Model.getInstance().getPdf(), targetFile);
 		}	
 	}
 	
-	private void launchSaveTask(File originalPdf, File targetFile) {
+	private void launchSaveTask(PdfFile pdfFile, File targetFile) {
 		ArrayList<Rectangle> newRects = uiHandler.getAllRectangles();
-		new TaskPdfSave(originalPdf, targetFile,newRects, defaultPdfPanel.getWidth(), defaultPdfPanel.getHeight(), this).execute();		
+		new TaskPdfSave(pdfFile, targetFile,newRects, defaultPdfPanel.getWidth(), defaultPdfPanel.getHeight(),this).execute();		
 		
 	}
 

@@ -77,9 +77,9 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 		Model model = Model.getInstance();
 		Image image = null;
 		if (model.getZoomFactor() != 1) {
-			image = model.getScaledPreivewImage();
+			image = model.getPdf().getScaledPreviewImage();
 		} else {
-			image = model.getPreviewImage();
+			image = model.getPdf().getPreviewImage();
 		}
 		return image;
 	}
@@ -101,7 +101,7 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 	public void newPdfLoaded() {
 		debug("listening to new pdf loaded");
 //		updateSize();
-		String filePath = Model.getInstance().getCurrentFile().getAbsolutePath();
+		String filePath = Model.getInstance().getPdf().getNormalizedFile().getAbsolutePath();
 		System.out.println("url: " + filePath);
         try {
             openPdfFile(filePath);
