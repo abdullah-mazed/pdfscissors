@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<jnlp codebase="http://sites.google.com/site/pdfscissors/" href="pdfscissors-offline.jnlp" spec="1.0+">
+    <information>
+        <title>PDF Scissors</title>
+        <vendor>PDF Scisssors</vendor>
+        <homepage href="http://www.pdfscissors.com/"/>
+        <description>Crops pdf for ebook readers.</description>
+        <description kind="short">Crops pdf for ebook readers</description>
+        <icon href="pdfscissors.png" kind="splash"/>
+        <icon href="pdfscissors.png" kind="default" width="32" height="32" />
+       
+	   <!-- allow app to run without Internet access -->
+		<offline-allowed/>
+
+		<shortcut online="true">          
+			<desktop/>
+			<!-- create menu item for this app under the major heading 'My App' -->
+			<menu submenu="PDF Scrissors"/>
+		</shortcut>
+	
+    </information>
+    <resources>
+        <j2se version="1.5+"/>
+        <jar eager="true" href="pdfscissors.jar" main="true"/>        
+    </resources>
+	<security>
+	
+	
+
+<all-permissions/>
+</security>
+    <application-desc main-class="bd.amazed.pdfscissors.main.PdfscissorsMain">
+    </application-desc>
+</jnlp>

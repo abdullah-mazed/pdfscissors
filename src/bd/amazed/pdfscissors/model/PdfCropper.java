@@ -6,8 +6,7 @@
 package bd.amazed.pdfscissors.model;
 
 import java.awt.AlphaComposite;
-import java.awt.Dimension;
-import java.awt.Graphics;
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
@@ -15,26 +14,17 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream.GetField;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 
-import javax.swing.DebugGraphics;
 import javax.swing.ProgressMonitor;
 
 import org.jpedal.PdfDecoder;
 import org.jpedal.exception.PdfException;
-import org.jpedal.objects.PdfPageData;
 
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.Element;
 import com.itextpdf.text.Rectangle;
-import com.itextpdf.text.pdf.BaseFont;
-import com.itextpdf.text.pdf.PRAcroForm;
 import com.itextpdf.text.pdf.PdfArray;
 import com.itextpdf.text.pdf.PdfContentByte;
 import com.itextpdf.text.pdf.PdfCopy;
@@ -45,9 +35,6 @@ import com.itextpdf.text.pdf.PdfNumber;
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.PdfStamper;
 import com.itextpdf.text.pdf.PdfWriter;
-import com.itextpdf.text.pdf.SimpleBookmark;
-
-import bd.amazed.pdfscissors.view.Rect;
 
 /**
  * 
@@ -73,18 +60,39 @@ public class PdfCropper {
 		BufferedImage lastPage = getPdfDecoder().getPageAsImage(endPage);
 
 		if (lastPage != null) {
+			lastPage = new BufferedImage(lastPage.getWidth(), lastPage.getHeight(), BufferedImage.TYPE_INT_ARGB);
+			
+			Graphics2D g2d = (Graphics2D) lastPage.getGraphics();
+			
+			g2d.setColor(Color.WHITE);
+			g2d.fillRect(0, 0, lastPage.getWidth(), lastPage.getHeight());
+			
+			float alpha = 0.5f;
+			int type = AlphaComposite.SRC_OVER;
+			AlphaComposite composite = AlphaComposite.getInstance(type, alpha);
+			g2d.setComposite(composite);
+			int argb;
+			int r;
+			int g;
+			int b;
 			for (int i = endPage; i >= 1 && !isCancel; i--) {
 				int percentageDone = (100 * (endPage - i)) / endPage;
 				System.out.println("Stacking page: " + i + ", completed " + percentageDone);
 				listener.propertyChange(new PropertyChangeEvent(this, "progress", null, percentageDone));
 				BufferedImage pageImage = getPdfDecoder().getPageAsImage(i);
 				if (pageImage != null) {
-					float alpha = 0.5f;
-					int type = AlphaComposite.SRC_OVER;
-					AlphaComposite composite = AlphaComposite.getInstance(type, alpha);
-					Graphics2D g = (Graphics2D) lastPage.getGraphics();
-					g.setComposite(composite);
-					g.drawImage(pageImage, 0, 0, null);
+					for (int x = 0; x < pageImage.getWidth(); x++) {
+						for (int y = 0; y < pageImage.getHeight(); y++) {
+							argb = pageImage.getRGB(x, y);
+							r = (argb >> 16) & 0x000000FF;
+							g = (argb >> 8) & 0x000000FF;
+							b = (argb) & 0x000000FF;
+							if ((r == g && g == b && b == r && r > 150)) {
+								pageImage.setRGB(x, y, 0x00FF0000);// transparent
+							}
+						}
+					}
+					g2d.drawImage(pageImage, 0, 0, null);
 				}
 			}
 		}
@@ -108,7 +116,7 @@ public class PdfCropper {
 
 	private PdfDecoder getPdfDecoder() throws PdfException {
 		if (pdfDecoder == null) {
-			pdfDecoder = new PdfDecoder(true);
+			pdfDecoder = new PdfDecoderMod(true);
 			try {
 				pdfDecoder.openPdfFile(mainFile.getAbsolutePath());
 			} catch (RuntimeException ex) {
