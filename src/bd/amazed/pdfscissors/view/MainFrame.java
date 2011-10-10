@@ -92,9 +92,7 @@ import javax.swing.JMenuItem;
  */
 public class MainFrame extends JFrame implements ModelListener {
 
-	private File currentFile;
 	private PdfPanel defaultPdfPanel;
-
 	private static final long serialVersionUID = 1L;
 	private JPanel jContentPane = null;
 	private JButton jButton = null;
@@ -295,7 +293,7 @@ public class MainFrame extends JFrame implements ModelListener {
 			setButton(jButton, imageFile, text, false);
 			jButton.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
-					openFile();
+					showFileOpenDialog();
 				}
 
 			});
@@ -320,45 +318,40 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 	}
 
-	private void openFile() {
-		JFileChooser fileChooser = new JFileChooser();
-		fileChooser.setFileFilter(createFileFilter());
-		String lastFile = Model.getInstance().getProperties().getProperty(Model.PROPERTY_LAST_FILE);
-		if (lastFile != null) {
-			System.out.println("Last opened directory rememberred: " + lastFile);
-			fileChooser.setCurrentDirectory(new File(lastFile));
-		}
+	private void showFileOpenDialog() {
+		OpenDialog openDialog = new OpenDialog();
+		openDialog.seMainFrame(this);
+		openDialog.setModal(true);
+		openDialog.setVisible(true);
+		
+	}
+	
+	public void openFile(File file, int pageGroupType) {
 
-		int retval = fileChooser.showOpenDialog(this);
-		if (retval == JFileChooser.APPROVE_OPTION) {
-			currentFile = fileChooser.getSelectedFile();
-			Model.getInstance().getProperties().setProperty(Model.PROPERTY_LAST_FILE, fileChooser.getCurrentDirectory().getAbsolutePath());
+		// create new scrollpane content
+		pdfPanelsContainer = new JPanel();
+		pdfPanelsContainer.setLayout(new GridBagLayout());
 
-			// create new scrollpane content
-			pdfPanelsContainer = new JPanel();
-			pdfPanelsContainer.setLayout(new GridBagLayout());
-
-			int pdfPanelCount = 1; // more to come
-			for (int i = 0; i < pdfPanelCount; i++) {
-				GridBagConstraints constraints = new GridBagConstraints();
-				constraints.gridx = 0;
-				constraints.gridy = i;
-				constraints.anchor = GridBagConstraints.CENTER;
-				constraints.insets = new Insets(2, 0, 2, 0);
-				if (i == 0) {
-					pdfPanelsContainer.add(getDefaultPdfPanel(), constraints);
-				}
+		int pdfPanelCount = 1; // more to come
+		for (int i = 0; i < pdfPanelCount; i++) {
+			GridBagConstraints constraints = new GridBagConstraints();
+			constraints.gridx = 0;
+			constraints.gridy = i;
+			constraints.anchor = GridBagConstraints.CENTER;
+			constraints.insets = new Insets(2, 0, 2, 0);
+			if (i == 0) {
+				pdfPanelsContainer.add(getDefaultPdfPanel(), constraints);
 			}
-
-			getScrollPanel().setViewportView(pdfPanelsContainer);
-
-			uiHandler.reset();
-			uiHandler.removeAllListeners();
-			registerComponentsToModel();
-			uiHandler.addListener(new UIHandlerLisnterForFrame());
-			
-			launchOpenTask(currentFile, PageGroup.GROUP_TYPE_ODD_EVEN, "Reading pdf...");
 		}
+
+		getScrollPanel().setViewportView(pdfPanelsContainer);
+
+		uiHandler.reset();
+		uiHandler.removeAllListeners();
+		registerComponentsToModel();
+		uiHandler.addListener(new UIHandlerLisnterForFrame());
+		
+		launchOpenTask(file, pageGroupType, "Reading pdf...");
 	}
 
 	private PdfPanel getDefaultPdfPanel() {
@@ -389,7 +382,7 @@ public class MainFrame extends JFrame implements ModelListener {
 
 	}
 
-	private FileFilter createFileFilter() {
+	public FileFilter createFileFilter() {
 		return new FileFilter() {
 			@Override
 			public boolean accept(File file) {
@@ -926,7 +919,7 @@ public class MainFrame extends JFrame implements ModelListener {
 
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
-					openFile();
+					showFileOpenDialog();
 				}
 			});
 		}

@@ -14,6 +14,8 @@ public class Model {
 
 	public static final String PROPERTY_LAST_FILE = "lastFile";
 	
+	public static final String PROPERTY_LAST_STACK_TYPE= "lastStackType";
+	
 	private static Model instance;
 
 	private Vector<ModelListener> modelListeners;
