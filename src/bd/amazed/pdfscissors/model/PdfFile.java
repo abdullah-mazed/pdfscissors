@@ -15,18 +15,17 @@ public class PdfFile {
 	// Original file reference is just stored.
 	private File normalizedFile;
 	private File originalFile;
-	private BufferedImage previewImage;
-	/** When zoom factor is not 1. */
-	private Image scaledPreviewImage;
 	private HashMap<String, String> pdfInfo;
+	private int pageCount;
 
 	private PdfFile() {
 
 	}
 
-	public PdfFile(File normalizedFile, File origiFile) {
+	public PdfFile(File normalizedFile, File origiFile, int pageCount) {
 		setNormalizedFile(normalizedFile);
 		setOriginalFile(origiFile);
+		setPageCount(pageCount);
 	}
 
 	public File getNormalizedFile() {
@@ -51,24 +50,6 @@ public class PdfFile {
 		this.originalFile = originalFile;
 	}
 
-	public BufferedImage getPreviewImage() {
-		return previewImage;
-	}
-
-	public void setPreviewImage(BufferedImage previewImage) {
-		if (previewImage == null) {
-			throw new IllegalArgumentException("Cannot set null preview image to model");
-		}
-		this.previewImage = previewImage;
-	}
-
-	public Image getScaledPreviewImage() {
-		return scaledPreviewImage;
-	}
-
-	public void setScaledPreviewImage(Image scaledPreviewImage) {
-		this.scaledPreviewImage = scaledPreviewImage;
-	}
 
 	public HashMap<String, String> getPdfInfo() {
 		if (pdfInfo == null) {
@@ -80,6 +61,16 @@ public class PdfFile {
 
 	public void setPdfInfo(HashMap<String, String> pdfInfo) {
 		this.pdfInfo = pdfInfo;
+	}
+	
+	
+
+	public int getPageCount() {
+		return pageCount;
+	}
+
+	public void setPageCount(int pageCount) {
+		this.pageCount = pageCount;
 	}
 
 	public static PdfFile NullPdf() {

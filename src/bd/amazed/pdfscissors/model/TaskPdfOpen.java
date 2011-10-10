@@ -5,6 +5,8 @@ import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
+import java.rmi.server.LoaderHandler;
+import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -13,50 +15,65 @@ import javax.swing.JOptionPane;
 import javax.swing.ProgressMonitor;
 import javax.swing.SwingWorker;
 
+
 import com.itextpdf.text.pdf.PdfException;
 
-public class TaskPdfOpen extends SwingWorker<BufferedImage, Void> {
+public class TaskPdfOpen extends SwingWorker<Vector<PageGroup>, Void> {
 
 	private PdfFile pdfFile;
 	private File originalFile;
+	private int groupType;
 	private boolean isCancelled;
 	PdfCropper cropper = null;
 	private Component owner;
 
-	public TaskPdfOpen(File file, Component owner) {
+	public TaskPdfOpen(File file, int groupType, Component owner) {
 		this.originalFile = file;
 		isCancelled = false;
 		this.owner = owner;
+		this.groupType = groupType;
 	}
 
 	@Override
-	protected BufferedImage doInBackground() throws Exception {
+	protected Vector<PageGroup> doInBackground() throws Exception {
 
 		debug("Normalzing pdf...");
 		pdfFile = PdfCropper.getNormalizedPdf(originalFile);
 		pdfFile.getNormalizedFile().deleteOnExit();
 
 		debug("Extracting pdf image...");
+		Vector<BufferedImage> loadedImages = null;
 		try {
 			cropper = new PdfCropper(pdfFile.getNormalizedFile());
+			
 			if (!checkEncryption()) {
 				JOptionPane.showMessageDialog(owner, "Sorry, your pdf is protected, cannot continue");
 			}
 			setProgress(0);
-			BufferedImage image = cropper.getImage(new PropertyChangeListener() {
-
+			
+			Vector<PageGroup> pageGroups = PageGroup.createGroup(groupType, pdfFile.getPageCount());
+			PropertyChangeListener propertyChangeListener = new PropertyChangeListener() {
 				@Override
 				public void propertyChange(PropertyChangeEvent evt) {
 					firePropertyChange(evt.getPropertyName(), evt.getOldValue(), evt.getNewValue());
 				}
-			});
-			setProgress(100);
-			if (image == null) {
-				debug("Ups.. null image for " + pdfFile.getNormalizedFile());
-			} else {
-				debug("PDF loaded " + pdfFile.getNormalizedFile());
+			};
+			for (int i = 0; i < pageGroups.size(); i++) {
+				PageGroup pageGroup = pageGroups.elementAt(i);
+				if (pageGroup.getPageCount() > 1) { //no need for stack image if there is only 1 page
+					BufferedImage image = cropper.getImage(propertyChangeListener, pageGroup);
+					
+					if (image == null) {
+						debug("Ups.. null image for " + pdfFile.getNormalizedFile());
+					} else {
+						debug("PDF loaded " + pageGroup + " from " + pdfFile.getNormalizedFile());
+					}
+					pageGroup.setStackImage(image);
+				}
+				
 			}
-			return image;
+			setProgress(100);			
+			return pageGroups;
 		} finally {
 			if (cropper != null) {
 				cropper.close();
@@ -77,12 +94,11 @@ public class TaskPdfOpen extends SwingWorker<BufferedImage, Void> {
 		setProgress(100);
 		firePropertyChange("done", false, true);
 		if (!isCancelled) {
-			BufferedImage image = null;
+			Vector<PageGroup> pageGroups = null;
 			try {
-				image = this.get();
-				if (image != null && !isCancelled) {
-					pdfFile.setPreviewImage(image);
-					Model.getInstance().setPdf(pdfFile);
+				pageGroups = this.get();
+				if (pageGroups != null && !isCancelled) {
+					Model.getInstance().setPdf(pdfFile, pageGroups);
 				} else {
 					Model.getInstance().setPdfLoadFailed(originalFile, new org.jpedal.exception.PdfException("Failed to extract image. Check if PDF is password protected or corrupted."));
 				}

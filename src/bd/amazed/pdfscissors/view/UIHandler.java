@@ -3,17 +3,21 @@ package bd.amazed.pdfscissors.view;
 import java.awt.Cursor;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
+
+import bd.amazed.pdfscissors.model.PageGroup;
 
 public class UIHandler {
 	public static int EDIT_MODE_SELECT = 1;
 	public static int EDIT_MODE_DRAW = 0;
 
 	private int editingMode;
-	protected ArrayList<Rect> rects;
+	protected ArrayList<Rect> rects; //TODO remove this and use current page group?
 	protected Rect selectedRect;
+	protected PageGroup currentPageGroup;
 
 	private int page;
 	private boolean showMergeMode;
@@ -24,6 +28,17 @@ public class UIHandler {
 		rects = new ArrayList<Rect>();
 		listeners = new Vector<UIHandlerListener>();
 		reset();
+	}
+	
+	public void setPageGroup(PageGroup pageGroup) {
+		rects = pageGroup.getRects();
+		selectedRect = null;
+		this.currentPageGroup = pageGroup;
+		firePageGroupSelectionChanged(pageGroup);
+	}
+	
+	public PageGroup getCurrentPageGroup() {
+		return currentPageGroup;
 	}
 
 	public int getEditingMode() {
@@ -65,13 +80,6 @@ public class UIHandler {
 		return rects;
 	}
 
-	public ArrayList<Rectangle> getAllRectangles() {
-		ArrayList<Rectangle> rectangles = new ArrayList<Rectangle>();
-		for (Rect rect : rects) {
-			rectangles.add(rect.bounds); // TODO rename rect by CropCell or something
-		}
-		return rectangles;
-	}
 
 	public void deleteSelected() {
 		delete(selectedRect);
@@ -198,6 +206,12 @@ public class UIHandler {
 	private void firePageChanged() {
 		for (UIHandlerListener listener : listeners) {
 			listener.pageChanged(page);
+		}
+	}
+	
+	private void firePageGroupSelectionChanged(PageGroup pageGroup) {
+		for (UIHandlerListener listener : listeners) {
+			listener.pageGroupSelected(pageGroup);
 		}
 	}
 

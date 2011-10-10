@@ -22,18 +22,18 @@ public class TaskPdfSave extends SwingWorker<Boolean, Void> {
 
 	private PdfFile pdfFile;
 	private File targetFile;
-	private ArrayList<Rectangle> cropCells;
+	PageRectsMap pageRectsMap;
 	private int viewWidth;
 	private int viewHeight;
 	private Component owner;
 
 	ProgressMonitor progressMonitor;
 
-	public TaskPdfSave(PdfFile pdfFile, File targetFile, ArrayList<Rectangle> cropCells, int viewWidth, int viewHeight,
+	public TaskPdfSave(PdfFile pdfFile, File targetFile, PageRectsMap pageRectsMap, int viewWidth, int viewHeight,
 			Component owner) {
 		this.pdfFile = pdfFile;
 		this.targetFile = targetFile;
-		this.cropCells = cropCells;
+		this.pageRectsMap = pageRectsMap;
 		this.owner = owner;
 		this.viewWidth = viewWidth;
 		this.viewHeight = viewHeight;
@@ -43,7 +43,7 @@ public class TaskPdfSave extends SwingWorker<Boolean, Void> {
 	@Override
 	protected Boolean doInBackground() throws Exception {
 		debug("Cropping to " + targetFile + "...");
-		PdfCropper.cropPdf(pdfFile, targetFile, cropCells, viewWidth, viewHeight, progressMonitor);
+		PdfCropper.cropPdf(pdfFile, targetFile, pageRectsMap, viewWidth, viewHeight, progressMonitor);
 		debug("Cropping success : " + targetFile);
 		return true;
 	}

@@ -137,11 +137,13 @@ public class StackViewCreationDialog extends JDialog {
 
 			@Override
 			public void propertyChange(PropertyChangeEvent evt) {
-				if ("progress" == evt.getPropertyName()) {
+				if ("progress".equals(evt.getPropertyName())) {
 					int progress = (Integer) evt.getNewValue();
 					getProgressbar().setValue(progress);
-				} else if ("done" == evt.getPropertyName()) {
+				} else if ("done".equals(evt.getPropertyName())) {
 					dispose();
+				} else if ("message".equals(evt.getPropertyName())) {
+					getProgressbar().setString((String)evt.getNewValue());
 				}
 			}
 		});

@@ -16,11 +16,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Vector;
 
 import javax.swing.ProgressMonitor;
 
 import org.jpedal.PdfDecoder;
 import org.jpedal.exception.PdfException;
+import org.omg.IOP.IOR;
+
+import bd.amazed.pdfscissors.view.Rect;
 
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
@@ -54,12 +58,13 @@ public class PdfCropper {
 		this.mainFile = file;
 	}
 
-	public BufferedImage getImage(PropertyChangeListener listener) throws PdfException {
+	public BufferedImage getImage(PropertyChangeListener listener, PageGroup pageGroup) throws PdfException {
 		// TODO validate page number
-		int endPage = getPdfDecoder().getPageCount();
+		int endPage = pageGroup.getLastPage();
 		BufferedImage lastPage = getPdfDecoder().getPageAsImage(endPage);
 
 		if (lastPage != null) {
+			listener.propertyChange(new PropertyChangeEvent(this, "message", null, "Stacking " + pageGroup));
 			lastPage = new BufferedImage(lastPage.getWidth(), lastPage.getHeight(), BufferedImage.TYPE_INT_ARGB);
 			
 			Graphics2D g2d = (Graphics2D) lastPage.getGraphics();
@@ -75,8 +80,10 @@ public class PdfCropper {
 			int r;
 			int g;
 			int b;
-			for (int i = endPage; i >= 1 && !isCancel; i--) {
-				int percentageDone = (100 * (endPage - i)) / endPage;
+			int pageCount = pageGroup.getPageCount();
+			for (int iPageInGroup = pageCount - 1; iPageInGroup >= 0 && !isCancel; iPageInGroup--) {
+				int i = pageGroup.getPageNumberAt(iPageInGroup);
+				int percentageDone = (100 * (pageCount - iPageInGroup)) / pageCount;
 				System.out.println("Stacking page: " + i + ", completed " + percentageDone);
 				listener.propertyChange(new PropertyChangeEvent(this, "progress", null, percentageDone));
 				BufferedImage pageImage = getPdfDecoder().getPageAsImage(i);
@@ -165,8 +172,9 @@ public class PdfCropper {
 			keywords += "Cropped by pdfscissors.com";
 			info.put("Keywords", keywords);
 
-			PdfFile pdfFile = new PdfFile(tempFile, originalFile);
+			PdfFile pdfFile = new PdfFile(tempFile, originalFile, endPage);
 			pdfFile.setPdfInfo(info);
+			pdfFile.setPageCount(endPage);
 
 			return pdfFile;
 
@@ -199,33 +207,17 @@ public class PdfCropper {
 		return maxBoundingBox;
 	}
 
-	public static void cropPdf(PdfFile pdfFile, File targetFile, ArrayList<java.awt.Rectangle> rects, int viewWidth,
+	public static void cropPdf(PdfFile pdfFile, File targetFile, PageRectsMap pageRectsMap, int viewWidth,
 			int viewHeight, ProgressMonitor progressMonitor) throws IOException, DocumentException {
 
 		File originalFile = pdfFile.getOriginalFile();
 		HashMap<String, String> pdfInfo = pdfFile.getPdfInfo();
 
-		// convert to actual rectangles
 		PdfReader reader = new PdfReader(originalFile.getAbsolutePath());
 
 		Rectangle currentSize = reader.getPageSizeWithRotation(1);
 		float pdfWidth = currentSize.getWidth();
 		float pdfHeight = currentSize.getHeight();
-		System.out.println("Finding ratio : viewSize " + viewWidth + "x" + viewHeight + ", pdf size " + pdfWidth + "x" + pdfHeight);
-		ArrayList<java.awt.Rectangle> cropRectsInIPDFCoords = new ArrayList<java.awt.Rectangle>(rects.size());
-		double widthRatio = pdfWidth / viewWidth;
-		double heightRatio = pdfHeight / viewHeight;
-		if (widthRatio != heightRatio) {
-			System.err.println("WARNING>>> RATION NOT SAME ?! " + widthRatio + " " + heightRatio);
-		}
-		for (java.awt.Rectangle rect : rects) {
-			java.awt.Rectangle covertedRect = new java.awt.Rectangle();
-			covertedRect.x = (int) (widthRatio * rect.x);
-			covertedRect.y = (int) (widthRatio * (viewHeight - rect.y - rect.height));
-			covertedRect.width = (int) (widthRatio * rect.width);
-			covertedRect.height = (int) (widthRatio * rect.height);
-			cropRectsInIPDFCoords.add(covertedRect);
-		}
 
 		Document document = null;
 		PdfCopy writer = null;
@@ -253,15 +245,25 @@ public class PdfCropper {
 			document.open();
 
 			PdfImportedPage page;
-			int cropCellCount = cropRectsInIPDFCoords.size();
-			int newPageCount = cropCellCount * originalPageCount;
+			
+			int newPageCount = 0;
 			for (int i = 0; i < originalPageCount;) {
 				++i;
+				ArrayList<java.awt.Rectangle> cropRectsInIPDFCoords = pageRectsMap.getRects(i);
+				int cropCellCount = 0;
+				if (cropRectsInIPDFCoords != null) {
+					cropCellCount = cropRectsInIPDFCoords.size();
+				}
+				
+				if (cropCellCount == 0) {
+					cropCellCount = 1;//we will assume there is one crop cell that covers the whole page
+				}
+				newPageCount += cropCellCount;
 				for (int iCell = 0; iCell < cropCellCount; iCell++) {
 					progressMonitor.setNote("Writing page " + ((i - 1) * cropCellCount + iCell) + " of " + newPageCount);
 					progressMonitor.setProgress(i * 100 / originalPageCount);
 
-					java.awt.Rectangle awtRect = cropRectsInIPDFCoords.get(iCell);
+//					java.awt.Rectangle awtRect = cropRectsInIPDFCoords.get(iCell);
 					// Rectangle itextRect = new Rectangle(awtRect.x , awtRect.y +
 					// awtRect.height, awtRect.x + awtRect.width, awtRect.y);
 					// Rectangle itextRect = new Rectangle(100,50);
@@ -272,6 +274,7 @@ public class PdfCropper {
 					page = writer.getImportedPage(reader, i);
 					// writer.setPageSize(itextRect);
 					writer.addPage(page);
+					System.out.println("Adding original page = " + i);//XXX REMOVE
 				}
 			}
 			// PRAcroForm form = reader.getAcroForm();
@@ -288,26 +291,40 @@ public class PdfCropper {
 
 			stamper = new PdfStamper(reader, new FileOutputStream(targetFile));
 			int pageCount = reader.getNumberOfPages();
-
-			for (int i = 0; i < pageCount;) {
-				++i;
-				// http://stackoverflow.com/questions/4089757/how-do-i-resize-an-existing-pdf-with-coldfusion-itext
-
-				PdfDictionary pdfDictionary = reader.getPageN(i);
-				PdfArray cropCell = new PdfArray();
-				progressMonitor.setNote("Cropping page " + i + " of " + pageCount);
-				progressMonitor.setProgress(i * 100 / pageCount);
-				int cellIndex = (i - 1) % cropCellCount;
-				java.awt.Rectangle awtRect = cropRectsInIPDFCoords.get(cellIndex);
-				cropCell.add(new PdfNumber(awtRect.x));// lower left x
-				cropCell.add(new PdfNumber(awtRect.y));// lower left y
-				cropCell.add(new PdfNumber(awtRect.x + awtRect.width)); // up right x
-				cropCell.add(new PdfNumber(awtRect.y + awtRect.height));// up righty
-				pdfDictionary.put(PdfName.CROPBOX, cropCell);
-				pdfDictionary.put(PdfName.MEDIABOX, cropCell);
-				pdfDictionary.put(PdfName.TRIMBOX, cropCell);
-				pdfDictionary.put(PdfName.BLEEDBOX, cropCell);
-
+			newPageCount = 0;
+			for (int iOriginalPage = 1; iOriginalPage <= originalPageCount; iOriginalPage++) {
+				ArrayList<java.awt.Rectangle> cropRectsInIPDFCoords = pageRectsMap.getConvertedRectsForCropping(iOriginalPage, viewWidth, viewHeight, pdfWidth, pdfHeight);
+				int cropCellCount = 0;
+				if (cropRectsInIPDFCoords != null) {
+					cropCellCount = cropRectsInIPDFCoords.size();
+				}
+				
+				if (cropCellCount == 0) {
+					newPageCount++; // we will still add one full page
+					System.out.println("Cropping page " + newPageCount + " ... full page size");
+				} else {
+					for (int i = 0; i < cropCellCount;) {
+						++i;
+						newPageCount++;
+						// http://stackoverflow.com/questions/4089757/how-do-i-resize-an-existing-pdf-with-coldfusion-itext
+						progressMonitor.setNote("Cropping page " + newPageCount + " of " + pageCount);
+						progressMonitor.setProgress(newPageCount * 100 / pageCount);
+						if (cropRectsInIPDFCoords != null) {
+							PdfDictionary pdfDictionary = reader.getPageN(newPageCount);
+							PdfArray cropCell = new PdfArray();
+							java.awt.Rectangle awtRect = cropRectsInIPDFCoords.get(i - 1);
+							System.out.println("Cropping page " + newPageCount + " with " + awtRect);
+							cropCell.add(new PdfNumber(awtRect.x));// lower left x
+							cropCell.add(new PdfNumber(awtRect.y));// lower left y
+							cropCell.add(new PdfNumber(awtRect.x + awtRect.width)); // up right x
+							cropCell.add(new PdfNumber(awtRect.y + awtRect.height));// up righty
+							pdfDictionary.put(PdfName.CROPBOX, cropCell);
+							pdfDictionary.put(PdfName.MEDIABOX, cropCell);
+							pdfDictionary.put(PdfName.TRIMBOX, cropCell);
+							pdfDictionary.put(PdfName.BLEEDBOX, cropCell);
+						} 
+					}
+				}
 			}
 
 			// put the information, like author name etc.

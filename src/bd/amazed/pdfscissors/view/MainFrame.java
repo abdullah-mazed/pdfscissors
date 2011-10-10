@@ -5,6 +5,8 @@ package bd.amazed.pdfscissors.view;
 
 import bd.amazed.pdfscissors.model.Model;
 import bd.amazed.pdfscissors.model.ModelListener;
+import bd.amazed.pdfscissors.model.PageGroup;
+import bd.amazed.pdfscissors.model.PageRectsMap;
 import bd.amazed.pdfscissors.model.PdfCropper;
 import bd.amazed.pdfscissors.model.PdfFile;
 import bd.amazed.pdfscissors.model.TaskPdfOpen;
@@ -12,6 +14,7 @@ import bd.amazed.pdfscissors.model.TaskPdfSave;
 import bd.amazed.pdfscissors.model.TempFileManager;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -46,9 +49,12 @@ import javax.imageio.ImageIO;
 import javax.swing.AbstractButton;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultListCellRenderer;
+import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JList;
 import javax.swing.KeyStroke;
+import javax.swing.ListSelectionModel;
 import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import javax.swing.Icon;
@@ -61,6 +67,8 @@ import javax.swing.ProgressMonitor;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 
 import org.jpedal.PdfDecoder;
@@ -124,6 +132,10 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JButton buttonEqualHeight = null;
 	private JMenu menuHelp = null;
 	private JMenuItem menuAbout = null;
+	private JScrollPane pageGroupScrollPanel = null;
+	private JList pageGroupList = null;
+	private JButton forwardButton = null;
+	private JButton backButton = null;
 
 	/**
 	 * This is the default constructor
@@ -236,8 +248,38 @@ public class MainFrame extends JFrame implements ModelListener {
 			jContentPane.add(getScrollPanel(), BorderLayout.CENTER);
 			jContentPane.add(getToolBar(), BorderLayout.NORTH);
 			jContentPane.add(getBottomPanel(), BorderLayout.SOUTH);
+			jContentPane.add(getPageGroupPanel(), BorderLayout.WEST);
 		}
 		return jContentPane;
+	}
+
+	private JScrollPane getPageGroupPanel() {
+		if (pageGroupScrollPanel == null) {
+			JList list = getPageGroupList();
+			pageGroupScrollPanel = new JScrollPane(list);
+			openFileDependendComponents.add(pageGroupScrollPanel);
+		}
+		return pageGroupScrollPanel;
+	}
+	
+	private JList getPageGroupList() {
+		if (pageGroupList == null) {
+			pageGroupList = new JList();
+			pageGroupList.setMinimumSize(new Dimension(200,100));
+			openFileDependendComponents.add(pageGroupList);
+			pageGroupList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			pageGroupList.addListSelectionListener(new ListSelectionListener() {
+				@Override
+				public void valueChanged(ListSelectionEvent e) {
+					int selectedIndex = pageGroupList.getSelectedIndex();
+					if (selectedIndex >= 0) {
+						PageGroup currentGroup = Model.getInstance().getPageGroups().elementAt(selectedIndex);
+						uiHandler.setPageGroup(currentGroup);
+					}
+				}
+			});
+		}
+		return pageGroupList;
 	}
 
 	/**
@@ -314,8 +356,8 @@ public class MainFrame extends JFrame implements ModelListener {
 			uiHandler.removeAllListeners();
 			registerComponentsToModel();
 			uiHandler.addListener(new UIHandlerLisnterForFrame());
-
-			launchOpenTask(currentFile, "Reading pdf...");
+			
+			launchOpenTask(currentFile, PageGroup.GROUP_TYPE_ODD_EVEN, "Reading pdf...");
 		}
 	}
 
@@ -326,8 +368,8 @@ public class MainFrame extends JFrame implements ModelListener {
 		return defaultPdfPanel;
 	}
 
-	private void launchOpenTask(File file, String string) {
-		final TaskPdfOpen task = new TaskPdfOpen(file, this);
+	private void launchOpenTask(File file, int groupType, String string) {
+		final TaskPdfOpen task = new TaskPdfOpen(file, groupType, this);
 		final StackViewCreationDialog stackViewCreationDialog = new StackViewCreationDialog(this);
 		stackViewCreationDialog.setModal(true);
 		stackViewCreationDialog.enableProgress(task, new ActionListener() {
@@ -417,13 +459,13 @@ public class MainFrame extends JFrame implements ModelListener {
 		if (bottomPanel == null) {
 			bottomPanel = new JPanel();
 
-			JButton backButton = new JButton("<");
+			backButton = new JButton("<");
 			openFileDependendComponents.add(backButton);
 			backButton.setToolTipText("Back One page");
 			bottomPanel.add(backButton);
 			backButton.addActionListener(new PageChangeHandler(false));
 
-			JButton forwardButton = new JButton(">");
+			forwardButton = new JButton(">");
 			openFileDependendComponents.add(forwardButton);
 			forwardButton.setToolTipText("Forward One page");
 			bottomPanel.add(getPageSelectionCombo(), null);
@@ -452,11 +494,6 @@ public class MainFrame extends JFrame implements ModelListener {
 	}
 
 	private void saveFile() {
-		if (uiHandler.getRectCount() == 0) {
-			JOptionPane.showMessageDialog(this, "You have not defined any croping area. Set some area first");
-			return;
-		}
-
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileFilter(createFileFilter());
 		File originalPdf = Model.getInstance().getPdf().getOriginalFile();
@@ -484,8 +521,8 @@ public class MainFrame extends JFrame implements ModelListener {
 	}
 
 	private void launchSaveTask(PdfFile pdfFile, File targetFile) {
-		ArrayList<Rectangle> newRects = uiHandler.getAllRectangles();
-		new TaskPdfSave(pdfFile, targetFile, newRects, defaultPdfPanel.getWidth(), defaultPdfPanel.getHeight(), this).execute();
+		PageRectsMap pageRectsMap = Model.getInstance().getPageRectsMap();
+		new TaskPdfSave(pdfFile, targetFile, pageRectsMap , defaultPdfPanel.getWidth(), defaultPdfPanel.getHeight(), this).execute();
 
 	}
 
@@ -675,22 +712,27 @@ public class MainFrame extends JFrame implements ModelListener {
 	@Override
 	public void newPdfLoaded() {
 		debug("listening to new pdf loaded.");
-		// update combo page list
-		int pageCount = getDefaultPdfPanel().getPageCount();
-		JComboBox combo = getPageSelectionCombo();
-		combo.removeAllItems();
-		combo.addItem("All pages stacked");
-		for (int i = 0; i < pageCount; i++) {
-			combo.addItem(String.valueOf(i + 1));
-		}
-
-		getScrollPanel().revalidate();
 		updateOpenFileDependents();
 	}
 
 	@Override
 	public void pdfLoadFailed(File failedFile, Throwable cause) {
 		handleException("Failed to load pdf file.", cause);
+	}
+	
+	@Override
+	public void pageGroupChanged(Vector<PageGroup> pageGroups) {
+		JList list = getPageGroupList();
+		list.removeAll();
+		DefaultListModel listModel = new DefaultListModel();
+		for (int i = 0; i < pageGroups.size(); i++) {
+			listModel.add(i, pageGroups.elementAt(i));
+		}
+		list.setModel(listModel); 
+		list.setSelectedIndex(0);
+		getPageGroupPanel().getViewport().removeAll();
+		getPageGroupPanel().getViewport().add(list);
+		
 	}
 
 	@Override
@@ -739,7 +781,7 @@ public class MainFrame extends JFrame implements ModelListener {
 					if (pageIndex != null && pageIndex.length() > 0 && Character.isDigit(pageIndex.charAt(0))) { // page
 						// number
 						uiHandler.setMergeMode(false);
-						int pageNumber = pageSelectionCombo.getSelectedIndex();
+						int pageNumber = Integer.valueOf(pageIndex);
 						uiHandler.setPage(pageNumber); // we dont have to add +1, cause first time is all page
 						try {
 							defaultPdfPanel.decodePage(pageNumber);
@@ -804,6 +846,39 @@ public class MainFrame extends JFrame implements ModelListener {
 		@Override
 		public void pageChanged(int index) {
 
+		}
+		
+		@Override
+		public void pageGroupSelected(PageGroup pageGroup) {
+			// update combo page list
+			int pageCount = pageGroup.getPageCount();
+			JComboBox combo = getPageSelectionCombo();
+			combo.removeAllItems();
+			if (pageCount > 1) {
+				combo.addItem("All pages stacked");
+			}
+			for (int i = 0; i < pageCount; i++) {
+				combo.addItem(String.valueOf(pageGroup.getPageNumberAt(i)));
+			}
+			combo.setSelectedIndex(0);
+			if (pageCount <= 1) {
+				forwardButton.setVisible(false);
+				forwardButton.setEnabled(false);
+				backButton.setVisible(false);
+				backButton.setEnabled(false);
+			} else {
+				forwardButton.setVisible(true);
+				forwardButton.setEnabled(true);
+				backButton.setVisible(true);
+				backButton.setEnabled(true);
+			}
+			getScrollPanel().revalidate();
+			
+			if(uiHandler.getRectCount() > 0) {
+				uiHandler.setEditingMode(UIHandler.EDIT_MODE_SELECT);
+			} else {
+				uiHandler.setEditingMode(uiHandler.EDIT_MODE_DRAW);
+			}
 		}
 
 	}

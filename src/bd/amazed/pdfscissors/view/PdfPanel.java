@@ -18,6 +18,7 @@ import java.awt.event.MouseMotionListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Vector;
 
 import javax.swing.JPanel;
 
@@ -25,6 +26,7 @@ import org.jpedal.PdfDecoder;
 
 import bd.amazed.pdfscissors.model.Model;
 import bd.amazed.pdfscissors.model.ModelListener;
+import bd.amazed.pdfscissors.model.PageGroup;
 import bd.amazed.pdfscissors.model.RectChangeListener;
 
 /**
@@ -76,11 +78,7 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 	private Image getImage() {
 		Model model = Model.getInstance();
 		Image image = null;
-		if (model.getZoomFactor() != 1) {
-			image = model.getPdf().getScaledPreviewImage();
-		} else {
-			image = model.getPdf().getPreviewImage();
-		}
+		image = uiHandler.getCurrentPageGroup().getStackImage();
 		return image;
 	}
 
@@ -185,6 +183,16 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 	@Override
 	public void pageChanged(int index) {
 
+	}
+	
+	@Override
+	public void pageGroupChanged(Vector<PageGroup> pageGroups) {
+		
+	}
+	
+	@Override
+	public void pageGroupSelected(PageGroup pageGroup) {
+		repaint();
 	}
 
 	protected class MouseHandler extends MouseAdapter implements MouseMotionListener {

@@ -13,6 +13,7 @@ import bd.amazed.pdfscissors.view.Rect;
 public class Model {
 
 	public static final String PROPERTY_LAST_FILE = "lastFile";
+	
 	private static Model instance;
 
 	private Vector<ModelListener> modelListeners;
@@ -26,10 +27,20 @@ public class Model {
 	private Properties properties;
 	private String propertyFileLocation;
 
+	private Vector<PageGroup> pageGroups;
+	
 	private Model() {
 		modelListeners = new java.util.Vector<ModelListener>();
-		zoomFactor = 1;
+		reset();
 	}
+
+
+	private void reset() {
+		zoomFactor = 1;
+		pageGroups = new Vector<PageGroup>();
+	}
+
+
 
 	public static Model getInstance() {
 		if (instance == null) {
@@ -58,13 +69,16 @@ public class Model {
 	 * @param originalFile original file
 	 * @param previewImage previewImage, must not be null
 	 */
-	public void setPdf(PdfFile pdfFile) {
+	public void setPdf(PdfFile pdfFile, Vector<PageGroup> pageGroups) {
 		if (currentPdf == null) {
 			throw new IllegalArgumentException("Cannot set null pdf file");
 		}
 		this.currentPdf = pdfFile;
+		reset(); //on new pdf load reset everything
 		fireNewPdf();
+		setPageGroups(pageGroups);
 	}
+
 
 	public PdfFile getPdf() {
 		return this.currentPdf;
@@ -77,6 +91,11 @@ public class Model {
 	 */
 	public void setPdfLoadFailed(File file, Throwable err) {
 		fireSetPdfFailed(file, err);
+	}
+	
+	private void setPageGroups(Vector<PageGroup> pageGroups) {
+		this.pageGroups = pageGroups;
+		firePageGroupChanged(pageGroups);
 	}
 
 	public void copyToClipboard(boolean isCut, Rect rect) {
@@ -100,28 +119,25 @@ public class Model {
 	public Rect getClipboardRect() {
 		return clipboardRect;
 	}
-
-	/**
-	 * @param zoomFactor max 1.0
-	 */
-	private void setZoomFactor(double zoomFactor) {
-		if (this.zoomFactor != zoomFactor) {
-			double oldZoom = this.zoomFactor;
-			this.zoomFactor = zoomFactor;
-			BufferedImage previewImage = currentPdf.getPreviewImage();
-			if (zoomFactor == 1) {
-				currentPdf.setScaledPreviewImage(previewImage);
-			} else {
-				if (previewImage != null) {
-					currentPdf.setScaledPreviewImage(previewImage.getScaledInstance((int) (previewImage.getWidth() * zoomFactor), (int) (previewImage.getHeight() * zoomFactor), BufferedImage.SCALE_FAST));
-				} else {
-					currentPdf.setScaledPreviewImage(null);// if preview image is null, so is scaled
-				}
-			}
-			fireZoomChanged(oldZoom, zoomFactor);
-		}
-
+	
+	public Vector<PageGroup> getPageGroups() {
+		return pageGroups;
 	}
+	
+	public PageRectsMap getPageRectsMap() {
+		PageGroup pageGroup = null;
+		Vector<Integer> pages = null;
+		PageRectsMap pageRectsMap = new PageRectsMap();
+		for (int i = 0; i < pageGroups.size(); i++) {
+			pageGroup = pageGroups.elementAt(i);
+			pages = pageGroup.getPages();
+			for (int page = 0; page < pages.size(); page++) {
+				pageRectsMap.putRects(pages.get(page), pageGroup.getRectangles());
+			}
+		}
+		return pageRectsMap;
+	}
+
 
 	public double getZoomFactor() {
 		return zoomFactor;
@@ -138,6 +154,13 @@ public class Model {
 			listener.pdfLoadFailed(failedFile, cause);
 		}
 	}
+	
+	protected void firePageGroupChanged(Vector<PageGroup> pageGroups) {
+		for (ModelListener listener : modelListeners) {
+			listener.pageGroupChanged(pageGroups);
+		}
+	}
+
 
 	protected void fireZoomChanged(double oldZoomFactor, double newZoomFactor) {
 		for (ModelListener listener : modelListeners) {
