@@ -17,6 +17,8 @@ public class PdfFile {
 	private File originalFile;
 	private HashMap<String, String> pdfInfo;
 	private int pageCount;
+	private float normalizedPdfWidth;
+	private float normalizedPdfHeight;
 
 	private PdfFile() {
 
@@ -71,6 +73,22 @@ public class PdfFile {
 
 	public void setPageCount(int pageCount) {
 		this.pageCount = pageCount;
+	}
+
+	public float getNormalizedPdfWidth() {
+		return normalizedPdfWidth;
+	}
+
+	public void setNormalizedPdfWidth(float normalizedPdfWidth) {
+		this.normalizedPdfWidth = normalizedPdfWidth;
+	}
+
+	public float getNormalizedPdfHeight() {
+		return normalizedPdfHeight;
+	}
+
+	public void setNormalizedPdfHeight(float normalizedPdfHeight) {
+		this.normalizedPdfHeight = normalizedPdfHeight;
 	}
 
 	public static PdfFile NullPdf() {

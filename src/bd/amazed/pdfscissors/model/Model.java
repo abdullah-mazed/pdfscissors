@@ -77,7 +77,7 @@ public class Model {
 		}
 		this.currentPdf = pdfFile;
 		reset(); //on new pdf load reset everything
-		fireNewPdf();
+		fireNewPdf(pdfFile);
 		setPageGroups(pageGroups);
 	}
 
@@ -145,9 +145,9 @@ public class Model {
 		return zoomFactor;
 	}
 
-	protected void fireNewPdf() {
+	protected void fireNewPdf(PdfFile pdfFile) {
 		for (ModelListener listener : modelListeners) {
-			listener.newPdfLoaded();
+			listener.newPdfLoaded(pdfFile);
 		}
 	}
 

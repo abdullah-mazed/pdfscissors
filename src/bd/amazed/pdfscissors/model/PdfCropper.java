@@ -148,7 +148,8 @@ public class PdfCropper {
 			debug("Creating temp file at " + tempFile);
 			reader = new PdfReader(originalFile.getAbsolutePath());
 			int endPage = reader.getNumberOfPages();
-			doc = new Document(getMaxBoundingBox(reader, endPage), 0, 0, 0, 0);
+			Rectangle maxBoundingBox = getMaxBoundingBox(reader, endPage);
+			doc = new Document(maxBoundingBox, 0, 0, 0, 0);
 			writer = PdfWriter.getInstance(doc, new FileOutputStream(tempFile));
 			doc.open();
 			PdfContentByte cb = writer.getDirectContent();
@@ -175,6 +176,8 @@ public class PdfCropper {
 			PdfFile pdfFile = new PdfFile(tempFile, originalFile, endPage);
 			pdfFile.setPdfInfo(info);
 			pdfFile.setPageCount(endPage);
+			pdfFile.setNormalizedPdfWidth(Math.abs(maxBoundingBox.getWidth()));
+			pdfFile.setNormalizedPdfHeight(Math.abs(maxBoundingBox.getHeight()));
 
 			return pdfFile;
 
@@ -274,7 +277,6 @@ public class PdfCropper {
 					page = writer.getImportedPage(reader, i);
 					// writer.setPageSize(itextRect);
 					writer.addPage(page);
-					System.out.println("Adding original page = " + i);//XXX REMOVE
 				}
 			}
 			// PRAcroForm form = reader.getAcroForm();

@@ -74,6 +74,7 @@ public class UIHandler {
 
 	public void addRect(Rect rect) {
 		rects.add(rect);
+		notifyRectsStateChanged();
 	}
 
 	public ArrayList<Rect> getAllRects() {
@@ -104,6 +105,7 @@ public class UIHandler {
 			delete(selectedRect);
 			rects.add(indexSelected, rightRect);
 			rects.add(indexSelected, leftRect);
+			notifyRectsStateChanged();
 		}
 	}
 
@@ -126,6 +128,7 @@ public class UIHandler {
 			delete(selectedRect);
 			rects.add(indexSelected, downRect);
 			rects.add(indexSelected, upRect);
+			notifyRectsStateChanged();
 		}
 	}
 
@@ -136,6 +139,7 @@ public class UIHandler {
 				selectedRect = null;
 			}
 			rect.fireEvent(null);
+			notifyRectsStateChanged();
 		}
 	}
 
@@ -157,6 +161,7 @@ public class UIHandler {
 			anyRect.fireEvent(null); // if canvas repaints whole area once, that
 			// will do.
 		}
+		notifyRectsStateChanged();
 	}
 
 	public void reset() {
@@ -214,6 +219,12 @@ public class UIHandler {
 			listener.pageGroupSelected(pageGroup);
 		}
 	}
+	
+	public void notifyRectsStateChanged() {
+		for (UIHandlerListener listener : listeners) {
+			listener.rectsStateChanged();
+		}
+	}
 
 	public void equalizeWidthOfSelected(int viewWidth) {
 		int maxWidth = -1;
@@ -234,6 +245,7 @@ public class UIHandler {
 		if (rects.size() > 0) {
 			rects.get(0).fireEvent(null);
 		}
+		notifyRectsStateChanged();
 	}
 
 	public void equalizeHeightOfSelected(int viewHeight) {
@@ -254,5 +266,6 @@ public class UIHandler {
 		if (rects.size() > 0) {
 			rects.get(0).fireEvent(null);
 		}
+		notifyRectsStateChanged();
 	}
 }

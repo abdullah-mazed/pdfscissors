@@ -7,7 +7,7 @@ import bd.amazed.pdfscissors.view.Rect;
 
 public interface ModelListener {
 
-	public void newPdfLoaded();
+	public void newPdfLoaded(PdfFile pdfFile);
 
 	public void pdfLoadFailed(File failedFile, Throwable cause);
 

@@ -25,7 +25,9 @@ public class Rect implements Cloneable {
 
 	protected static final Color COLOR_SELECTED_RECT = new Color(0x55000077, true);
 	protected static final Color COLOR_RECT = new Color(0x55555555, true);
-	private static Stroke dashStroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] { 9 }, 0);
+	public static Stroke STROKE_DASHED = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] { 9 }, 0);
+	public static Stroke STROKE_SOLID = new BasicStroke();
+	
 	private static Font font;
 
 	protected Vector<RectChangeListener> listeners = new Vector<RectChangeListener>();
@@ -109,38 +111,56 @@ public class Rect implements Cloneable {
 	}
 
 	public void draw(Graphics g, Rectangle clipRect) {
-		if (!bounds.intersects(clipRect))
-			return;
+		draw(g, 1, STROKE_DASHED, true); 
+	}
+	
+	public void draw(Graphics g, float scale, Stroke rectBorderStroke, boolean drawIndex) {
 		if (isSelected) {
 			g.setColor(COLOR_SELECTED_RECT);
 		} else {
 			g.setColor(COLOR_RECT);
 		}
-		g.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
+		g.fillRect( (int) (bounds.x * scale), (int)( bounds.y * scale), (int)( bounds.width * scale), (int)( bounds.height * scale));
 
+		
 		// draw order number
-		if (isSelected) {
-			g.setColor(Color.BLUE);
-		} else {
-			g.setColor(Color.GRAY);
+		if (drawIndex) {
+			if (font == null) {
+				font = new Font(g.getFont().getFamily(), g.getFont().getStyle(), g.getFont().getSize() * 2);
+			}
+			if (isSelected) {
+				g.setColor(Color.black);
+			} else {
+				g.setColor(Color.gray);
+			}
+			int boxSize = (int) (font.getSize() * 1.5 * scale);
+			g.fillRect((int) (bounds.x * scale), (int) (bounds.y * scale), boxSize, boxSize);
+
+			if (isSelected) {
+				g.setColor(Color.RED);
+			} else {
+				g.setColor(Color.GREEN);
+			}
+
+			g.setFont(font);
+			g.drawString(String.valueOf(uiHandler.getIndexOf(this) + 1), bounds.x + 5, bounds.y + g.getFont().getSize() + 2);
 		}
-		if (font == null) {
-			font = new Font(g.getFont().getFamily(), g.getFont().getStyle(), g.getFont().getSize() * 2);
-		}
-		g.setFont(font);
-		g.drawString(String.valueOf(uiHandler.getIndexOf(this) + 1), bounds.x + 5, bounds.y + g.getFont().getSize() + 2);
 
 		// draw dashed border
 		g.setColor(Color.BLACK);
 		Graphics2D g2d = (Graphics2D) g;
 		Stroke oldStroke = g2d.getStroke();
-		g2d.setStroke(dashStroke);
-		g.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
+		g2d.setStroke(rectBorderStroke);
+		g.drawRect((int) (bounds.x * scale), (int)( bounds.y * scale), (int)( bounds.width * scale), (int)( bounds.height * scale));
+		
+		if (scale != 1)
+		System.out.println("BOX " + (int) (bounds.x * scale) + "," +  (int)( bounds.y * scale) + "," +  (int)( bounds.width * scale) + "," + (int)( bounds.height * scale));
 		g2d.setStroke(oldStroke);
 		if (isSelected) {
 			Rectangle[] cornerboxs = getCornerboxRects();
 			for (int i = 0; i < cornerboxs.length; i++)
-				g.fillRect(cornerboxs[i].x, cornerboxs[i].y, cornerboxs[i].width, cornerboxs[i].height);
+				g.fillRect( (int) (cornerboxs[i].x * scale), (int)( cornerboxs[i].y * scale), 
+						(int) (cornerboxs[i].width * scale), (int)(cornerboxs[i].height * scale));
 		}
 	}
 

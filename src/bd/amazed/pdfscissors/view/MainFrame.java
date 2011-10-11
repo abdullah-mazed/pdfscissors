@@ -54,6 +54,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JList;
 import javax.swing.KeyStroke;
+import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingWorker;
 import javax.swing.Timer;
@@ -132,6 +133,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JMenuItem menuAbout = null;
 	private JScrollPane pageGroupScrollPanel = null;
 	private JList pageGroupList = null;
+	private PageGroupRenderer pageGroupListRenderer;
 	private JButton forwardButton = null;
 	private JButton backButton = null;
 
@@ -266,6 +268,8 @@ public class MainFrame extends JFrame implements ModelListener {
 			pageGroupList.setMinimumSize(new Dimension(200,100));
 			openFileDependendComponents.add(pageGroupList);
 			pageGroupList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			pageGroupList.setCellRenderer(getPageGroupListCellRenderer());
+			pageGroupList.setBackground(this.getBackground());
 			pageGroupList.addListSelectionListener(new ListSelectionListener() {
 				@Override
 				public void valueChanged(ListSelectionEvent e) {
@@ -278,6 +282,13 @@ public class MainFrame extends JFrame implements ModelListener {
 			});
 		}
 		return pageGroupList;
+	}
+
+	private PageGroupRenderer getPageGroupListCellRenderer() {
+		if (this.pageGroupListRenderer == null) {
+			this.pageGroupListRenderer = new PageGroupRenderer();
+		}
+		return this.pageGroupListRenderer;
 	}
 
 	/**
@@ -703,9 +714,11 @@ public class MainFrame extends JFrame implements ModelListener {
 	}
 
 	@Override
-	public void newPdfLoaded() {
+	public void newPdfLoaded(PdfFile pdfFile) {
 		debug("listening to new pdf loaded.");
 		updateOpenFileDependents();
+		getPageGroupListCellRenderer().setPageSize(pdfFile.getNormalizedPdfWidth(), pdfFile.getNormalizedPdfHeight());
+		getPageGroupList().invalidate(); // to recalculate size etc
 	}
 
 	@Override
@@ -848,7 +861,7 @@ public class MainFrame extends JFrame implements ModelListener {
 			JComboBox combo = getPageSelectionCombo();
 			combo.removeAllItems();
 			if (pageCount > 1) {
-				combo.addItem("All pages stacked");
+				combo.addItem("Stacked view");
 			}
 			for (int i = 0; i < pageCount; i++) {
 				combo.addItem(String.valueOf(pageGroup.getPageNumberAt(i)));
@@ -872,6 +885,11 @@ public class MainFrame extends JFrame implements ModelListener {
 			} else {
 				uiHandler.setEditingMode(uiHandler.EDIT_MODE_DRAW);
 			}
+		}
+		
+		@Override
+		public void rectsStateChanged() {
+			getPageGroupList().repaint();
 		}
 
 	}

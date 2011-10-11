@@ -27,6 +27,7 @@ import org.jpedal.PdfDecoder;
 import bd.amazed.pdfscissors.model.Model;
 import bd.amazed.pdfscissors.model.ModelListener;
 import bd.amazed.pdfscissors.model.PageGroup;
+import bd.amazed.pdfscissors.model.PdfFile;
 import bd.amazed.pdfscissors.model.RectChangeListener;
 
 /**
@@ -96,10 +97,10 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 	}
 
 	@Override
-	public void newPdfLoaded() {
+	public void newPdfLoaded(PdfFile pdfFile) {
 		debug("listening to new pdf loaded");
 		// updateSize();
-		String filePath = Model.getInstance().getPdf().getNormalizedFile().getAbsolutePath();
+		String filePath = pdfFile.getNormalizedFile().getAbsolutePath();
 		System.out.println("url: " + filePath);
 		try {
 			openPdfFile(filePath);
@@ -166,7 +167,6 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 	}
 
 	public void updateCursor() {
-		debug("Updating cursor");// XXX
 		if (uiHandler.getEditingMode() == UIHandler.EDIT_MODE_DRAW) {
 			setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
 		} else {
@@ -193,6 +193,11 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 	@Override
 	public void pageGroupSelected(PageGroup pageGroup) {
 		repaint();
+	}
+	
+	@Override
+	public void rectsStateChanged() {
+		
 	}
 
 	protected class MouseHandler extends MouseAdapter implements MouseMotionListener {
@@ -244,11 +249,13 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 			switch (dragStatus) {
 			case DRAG_MOVE:
 				uiHandler.getSelectedRect().translate(pointer.x - dragAnchor.x, pointer.y - dragAnchor.y, getWidth(), getHeight());
+				uiHandler.notifyRectsStateChanged();
 				dragAnchor = pointer; // update for next dragged event
 				break;
 			case DRAG_CREATE:
 			case DRAG_RESIZE:
 				uiHandler.getSelectedRect().resize(dragAnchor, pointer, getWidth(), getHeight());
+				uiHandler.notifyRectsStateChanged();
 				break;
 			}
 		}

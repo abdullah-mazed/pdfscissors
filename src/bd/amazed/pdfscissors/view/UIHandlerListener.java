@@ -12,5 +12,7 @@ public interface UIHandlerListener {
 	public void pageChanged(int index);
 
 	public void pageGroupSelected(PageGroup pageGroup);
+
+	public void rectsStateChanged();
 	
 }
