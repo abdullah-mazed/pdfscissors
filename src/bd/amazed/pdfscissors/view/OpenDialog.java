@@ -134,7 +134,7 @@ public class OpenDialog extends JDialog {
 			contentPanel.add(rdbtnOddAndEven, gbc_rdbtnOddAndEven);
 		}
 		{
-			JRadioButton rdbtnAllPagesSeparately = new JRadioButton("All pages separately ");
+			JRadioButton rdbtnAllPagesSeparately = new JRadioButton("Every page separately ");
 			stackGroupTypeChoices.add(rdbtnAllPagesSeparately);
 			rdbtnAllPagesSeparately.setActionCommand(String.valueOf(PageGroup.GROUP_TYPE_INDIVIDUAL));
 			if (rdbtnAllPagesSeparately.getActionCommand().equals(lastSelectionOption)) {

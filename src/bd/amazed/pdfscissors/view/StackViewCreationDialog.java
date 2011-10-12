@@ -122,7 +122,7 @@ public class StackViewCreationDialog extends JDialog {
 		if (progressbar == null) {
 			progressbar = new JProgressBar();
 			progressbar.setToolTipText("Creating page stack. This will help you during cropping.");
-			progressbar.setString("Creating stack...");
+			progressbar.setString("Opening pdf...");
 			progressbar.setStringPainted(true);
 		}
 		return progressbar;

@@ -218,9 +218,16 @@ public class PdfCropper {
 
 		PdfReader reader = new PdfReader(originalFile.getAbsolutePath());
 
-		Rectangle currentSize = reader.getPageSizeWithRotation(1);
-		float pdfWidth = currentSize.getWidth();
-		float pdfHeight = currentSize.getHeight();
+		float pdfWidth = pdfFile.getNormalizedPdfWidth();
+		float pdfHeight = pdfFile.getNormalizedPdfHeight();
+		
+		System.out.println("Finding ratio : viewSize " + viewWidth + "x" + viewHeight + ", pdf size " + pdfWidth + "x" + pdfHeight);
+		double widthRatio = pdfWidth / viewWidth;
+		double heightRatio = pdfHeight / viewHeight;
+		if (widthRatio != heightRatio) {
+			System.err.println("WARNING>>> RATION NOT SAME ?! " + widthRatio + " " + heightRatio);
+		}
+		
 
 		Document document = null;
 		PdfCopy writer = null;
@@ -252,10 +259,10 @@ public class PdfCropper {
 			int newPageCount = 0;
 			for (int i = 0; i < originalPageCount;) {
 				++i;
-				ArrayList<java.awt.Rectangle> cropRectsInIPDFCoords = pageRectsMap.getRects(i);
+				ArrayList<java.awt.Rectangle> cropRects = pageRectsMap.getRects(i);
 				int cropCellCount = 0;
-				if (cropRectsInIPDFCoords != null) {
-					cropCellCount = cropRectsInIPDFCoords.size();
+				if (cropRects != null) {
+					cropCellCount = cropRects.size();
 				}
 				
 				if (cropCellCount == 0) {
