@@ -32,10 +32,12 @@ public class AboutView extends JDialog {
 	private String appDesc = "<HTML>" + "<B>PDF Scissors </B>" + versionValue + "<BR><BR>" +
 
 	"<B>Author: </B> Abdullah Al Mazed (Gagan)" + "<BR><BR>" +
+	
+	"<B>Code contributor: </B> Sergio Gragera Camino" + "<BR><BR>" +
 
 	"<B> License: </B>This is a free open source software.<BR>" + "Use it for free respecting Affero General Public License.<BR> <BR>" +
 
-	"<B>Libraries used :</B> iTextPdf, JPedal.<br>" + "I didnot check every details of the licenses, however, since I am releasing as open source and for free, there should not be any issue." + "If you notice any issue, please leave a message in my website or sourceforge page.<BR> <BR>" +
+	"<B>Libraries used :</B> iTextPdf, JPedal.<br><BR> <BR>" +
 
 	"<B>If this software was any useful, please drop a comment to inspire!<br>Enjoy! :) </B>" + "</HTML>";
 	//

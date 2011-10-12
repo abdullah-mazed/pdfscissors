@@ -1,6 +1,7 @@
 package bd.amazed.pdfscissors.view;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -8,6 +9,7 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.Vector;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -22,6 +24,7 @@ import javax.swing.border.EmptyBorder;
 
 import bd.amazed.pdfscissors.model.Model;
 import bd.amazed.pdfscissors.model.PageGroup;
+import javax.swing.JCheckBox;
 
 public class OpenDialog extends JDialog {
 
@@ -29,7 +32,7 @@ public class OpenDialog extends JDialog {
 	private JTextField filePath;
 	private MainFrame mainFrame;
 	protected File file;
-	
+	private Vector<Component> advancedOptions;
 
 	/**
 	 * Launch the application.
@@ -48,16 +51,17 @@ public class OpenDialog extends JDialog {
 	 * Create the dialog.
 	 */
 	public OpenDialog() {
-		setTitle("Open pdf");
+		advancedOptions = new Vector<Component>();
+		setTitle("Open pdf");		
 		setBounds(100, 100, 509, 299);
 		getContentPane().setLayout(new BorderLayout());
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		getContentPane().add(contentPanel, BorderLayout.CENTER);
 		GridBagLayout gbl_contentPanel = new GridBagLayout();
 		gbl_contentPanel.columnWidths = new int[]{427, 56, 0};
-		gbl_contentPanel.rowHeights = new int[]{14, 23, 0, 0, 0, 0, 0};
+		gbl_contentPanel.rowHeights = new int[]{14, 23, 0, 0, 0, 0, 0, 0, 0, 0};
 		gbl_contentPanel.columnWeights = new double[]{0.0, 0.0, Double.MIN_VALUE};
-		gbl_contentPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
+		gbl_contentPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
 		contentPanel.setLayout(gbl_contentPanel);
 		{
 			JLabel lblFileLocation = new JLabel("File location");
@@ -142,10 +146,46 @@ public class OpenDialog extends JDialog {
 			}
 			GridBagConstraints gbc_rdbtnAllPagesSeparately = new GridBagConstraints();
 			gbc_rdbtnAllPagesSeparately.anchor = GridBagConstraints.WEST;
-			gbc_rdbtnAllPagesSeparately.insets = new Insets(0, 0, 0, 5);
+			gbc_rdbtnAllPagesSeparately.insets = new Insets(0, 0, 5, 5);
 			gbc_rdbtnAllPagesSeparately.gridx = 0;
 			gbc_rdbtnAllPagesSeparately.gridy = 5;
 			contentPanel.add(rdbtnAllPagesSeparately, gbc_rdbtnAllPagesSeparately);
+		}
+		{
+			final String showText = "Show advanced options";
+			final String hideText = "Hide advanced options";
+			final JButton btnShowAdvancedOptions = new JButton(showText);
+			btnShowAdvancedOptions.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent arg0) {
+					boolean showNow = showText.equals(btnShowAdvancedOptions.getText());
+					if (showNow) {
+						btnShowAdvancedOptions.setText(hideText);
+					} else {
+						btnShowAdvancedOptions.setText(showText);
+					}
+					for (Component component : advancedOptions) {
+						component.setVisible(showNow);
+					}
+				}
+			});
+			GridBagConstraints gbc_btnShowAdvancedOptions = new GridBagConstraints();
+			gbc_btnShowAdvancedOptions.anchor = GridBagConstraints.WEST;
+			gbc_btnShowAdvancedOptions.insets = new Insets(0, 0, 5, 5);
+			gbc_btnShowAdvancedOptions.gridx = 0;
+			gbc_btnShowAdvancedOptions.gridy = 7;
+			contentPanel.add(btnShowAdvancedOptions, gbc_btnShowAdvancedOptions);
+		}
+		final JCheckBox chckbxCreateStackedView = new JCheckBox("Create stacked view that helps cropping");
+		{	
+			chckbxCreateStackedView.setSelected(true);
+			GridBagConstraints gbc_chckbxCreateStackedView = new GridBagConstraints();
+			gbc_chckbxCreateStackedView.anchor = GridBagConstraints.WEST;
+			gbc_chckbxCreateStackedView.insets = new Insets(0, 0, 0, 5);
+			gbc_chckbxCreateStackedView.gridx = 0;
+			gbc_chckbxCreateStackedView.gridy = 8;
+			advancedOptions.add(chckbxCreateStackedView);
+			chckbxCreateStackedView.setVisible(false);
+			contentPanel.add(chckbxCreateStackedView, gbc_chckbxCreateStackedView);
 		}
 		
 	
@@ -164,7 +204,7 @@ public class OpenDialog extends JDialog {
 						int type = Integer.valueOf(stackGroupTypeChoices.getSelection().getActionCommand());
 						Model.getInstance().getProperties().setProperty(Model.PROPERTY_LAST_STACK_TYPE, stackGroupTypeChoices.getSelection().getActionCommand());
 						OpenDialog.this.dispose();
-						mainFrame.openFile(file, type);
+						mainFrame.openFile(file, type, chckbxCreateStackedView.isSelected());
 					}
 				});
 				okButton.setActionCommand("OK");
@@ -182,6 +222,7 @@ public class OpenDialog extends JDialog {
 				buttonPane.add(cancelButton);
 			}
 		}
+	
 	}
 	
 	public void showFileChooserDialog() {

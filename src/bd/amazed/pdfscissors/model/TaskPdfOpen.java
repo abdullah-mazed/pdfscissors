@@ -15,7 +15,6 @@ import javax.swing.JOptionPane;
 import javax.swing.ProgressMonitor;
 import javax.swing.SwingWorker;
 
-
 import com.itextpdf.text.pdf.PdfException;
 
 public class TaskPdfOpen extends SwingWorker<Vector<PageGroup>, Void> {
@@ -24,14 +23,16 @@ public class TaskPdfOpen extends SwingWorker<Vector<PageGroup>, Void> {
 	private File originalFile;
 	private int groupType;
 	private boolean isCancelled;
-	PdfCropper cropper = null;
+	private PdfCropper cropper = null;
 	private Component owner;
+	private boolean shouldCreateStackView;
 
-	public TaskPdfOpen(File file, int groupType, Component owner) {
+	public TaskPdfOpen(File file, int groupType, boolean shouldCreateStackView, Component owner) {
 		this.originalFile = file;
 		isCancelled = false;
 		this.owner = owner;
 		this.groupType = groupType;
+		this.shouldCreateStackView = shouldCreateStackView;
 	}
 
 	@Override
@@ -45,34 +46,35 @@ public class TaskPdfOpen extends SwingWorker<Vector<PageGroup>, Void> {
 		Vector<BufferedImage> loadedImages = null;
 		try {
 			cropper = new PdfCropper(pdfFile.getNormalizedFile());
-			
+
 			if (!checkEncryption()) {
 				JOptionPane.showMessageDialog(owner, "Sorry, your pdf is protected, cannot continue");
 			}
-			setProgress(0);
-			
 			Vector<PageGroup> pageGroups = PageGroup.createGroup(groupType, pdfFile.getPageCount());
-			PropertyChangeListener propertyChangeListener = new PropertyChangeListener() {
-				@Override
-				public void propertyChange(PropertyChangeEvent evt) {
-					firePropertyChange(evt.getPropertyName(), evt.getOldValue(), evt.getNewValue());
-				}
-			};
-			for (int i = 0; i < pageGroups.size(); i++) {
-				PageGroup pageGroup = pageGroups.elementAt(i);
-				if (pageGroup.getPageCount() > 1) { //no need for stack image if there is only 1 page
+
+			if (shouldCreateStackView && groupType != PageGroup.GROUP_TYPE_INDIVIDUAL) {
+				setProgress(0);
+				PropertyChangeListener propertyChangeListener = new PropertyChangeListener() {
+					@Override
+					public void propertyChange(PropertyChangeEvent evt) {
+						firePropertyChange(evt.getPropertyName(), evt.getOldValue(), evt.getNewValue());
+					}
+				};
+
+				for (int i = 0; i < pageGroups.size(); i++) {
+					PageGroup pageGroup = pageGroups.elementAt(i);
 					BufferedImage image = cropper.getImage(propertyChangeListener, pageGroup);
-					
+
 					if (image == null) {
 						debug("Ups.. null image for " + pdfFile.getNormalizedFile());
 					} else {
 						debug("PDF loaded " + pageGroup + " from " + pdfFile.getNormalizedFile());
 					}
 					pageGroup.setStackImage(image);
+
 				}
-				
+				setProgress(100);
 			}
-			setProgress(100);			
 			return pageGroups;
 		} finally {
 			if (cropper != null) {

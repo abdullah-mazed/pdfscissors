@@ -58,7 +58,14 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 			if (image != null) {
 				g.drawImage(image, 0, 0, this);
 			} else {
-				System.out.println("PdfPanel.paintComponent: show merged page: image is null.");
+				g.setColor(Color.white);
+				g.fillRect(0, 0, getWidth(), getHeight());
+				g.setColor(Color.black);
+				String text = "No stacked view. View individual pages using the bottom toolbar.";
+				int textWidth = g.getFontMetrics().stringWidth(text);
+				int textHeight = g.getFontMetrics().getHeight();
+				g.setColor(Color.black);
+				g.drawString(text, (getWidth() - textWidth)/2, (getHeight() - textHeight)/2);
 			}
 		} else {
 			super.paintComponent(g);

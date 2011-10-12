@@ -3,47 +3,30 @@
  */
 package bd.amazed.pdfscissors.view;
 
-import bd.amazed.pdfscissors.model.Model;
-import bd.amazed.pdfscissors.model.ModelListener;
-import bd.amazed.pdfscissors.model.PageGroup;
-import bd.amazed.pdfscissors.model.PageRectsMap;
-import bd.amazed.pdfscissors.model.PdfCropper;
-import bd.amazed.pdfscissors.model.PdfFile;
-import bd.amazed.pdfscissors.model.TaskPdfOpen;
-import bd.amazed.pdfscissors.model.TaskPdfSave;
-import bd.amazed.pdfscissors.model.TempFileManager;
-
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
-import java.awt.Cursor;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.MenuItem;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.ScrollPane;
-import java.awt.event.WindowEvent;
-import java.beans.PropertyChangeEvent;
-import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
-import java.awt.image.BufferedImage;
-import java.beans.PropertyChangeListener;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.EventObject;
-import java.util.Iterator;
+import java.util.Vector;
 
 import javax.imageio.ImageIO;
 import javax.swing.AbstractButton;
@@ -52,40 +35,32 @@ import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JList;
-import javax.swing.KeyStroke;
-import javax.swing.ListCellRenderer;
-import javax.swing.ListSelectionModel;
-import javax.swing.SwingWorker;
-import javax.swing.Timer;
-import javax.swing.Icon;
-import javax.swing.JDialog;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JList;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.ProgressMonitor;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
+import javax.swing.JScrollPane;
+import javax.swing.JToggleButton;
+import javax.swing.JToolBar;
+import javax.swing.KeyStroke;
+import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 
-import org.jpedal.PdfDecoder;
-import org.jpedal.exception.PdfException;
-
-import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.pdf.qrcode.Mode;
-
-import javax.swing.JScrollPane;
-import java.util.Vector;
-import javax.swing.JToolBar;
-import javax.swing.JToggleButton;
-import javax.swing.JComboBox;
-import javax.swing.JMenuBar;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
+import bd.amazed.pdfscissors.model.Model;
+import bd.amazed.pdfscissors.model.ModelListener;
+import bd.amazed.pdfscissors.model.PageGroup;
+import bd.amazed.pdfscissors.model.PageRectsMap;
+import bd.amazed.pdfscissors.model.PdfFile;
+import bd.amazed.pdfscissors.model.TaskPdfOpen;
+import bd.amazed.pdfscissors.model.TaskPdfSave;
+import bd.amazed.pdfscissors.model.TempFileManager;
 
 /**
  * @author Gagan
@@ -337,7 +312,7 @@ public class MainFrame extends JFrame implements ModelListener {
 		
 	}
 	
-	public void openFile(File file, int pageGroupType) {
+	public void openFile(File file, int pageGroupType, boolean shouldCreateStackView) {
 
 		// create new scrollpane content
 		pdfPanelsContainer = new JPanel();
@@ -362,7 +337,7 @@ public class MainFrame extends JFrame implements ModelListener {
 		registerComponentsToModel();
 		uiHandler.addListener(new UIHandlerLisnterForFrame());
 		
-		launchOpenTask(file, pageGroupType, "Reading pdf...");
+		launchOpenTask(file, pageGroupType, shouldCreateStackView, "Reading pdf...");
 	}
 
 	private PdfPanel getDefaultPdfPanel() {
@@ -372,8 +347,8 @@ public class MainFrame extends JFrame implements ModelListener {
 		return defaultPdfPanel;
 	}
 
-	private void launchOpenTask(File file, int groupType, String string) {
-		final TaskPdfOpen task = new TaskPdfOpen(file, groupType, this);
+	private void launchOpenTask(File file, int groupType, boolean shouldCreateStackView, String string) {
+		final TaskPdfOpen task = new TaskPdfOpen(file, groupType, shouldCreateStackView, this);
 		final StackViewCreationDialog stackViewCreationDialog = new StackViewCreationDialog(this);
 		stackViewCreationDialog.setModal(true);
 		stackViewCreationDialog.enableProgress(task, new ActionListener() {
@@ -920,6 +895,8 @@ public class MainFrame extends JFrame implements ModelListener {
 			menuFile.setMnemonic(KeyEvent.VK_F);
 			menuFile.add(getMenuFileOpen());
 			menuFile.add(getMenuSave());
+			menuFile.addSeparator();
+			menuFile.add(createMenuDonate());
 		}
 		return menuFile;
 	}
@@ -962,6 +939,32 @@ public class MainFrame extends JFrame implements ModelListener {
 			});
 		}
 		return menuSave;
+	}
+	
+	/**
+	 * 
+	 * @return javax.swing.JMenuItem
+	 */
+	private JMenuItem createMenuDonate() {
+		JMenuItem menuDonate = new JMenuItem("Donate", KeyEvent.VK_D);
+		menuDonate.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if (Desktop.isDesktopSupported()) {
+					try {
+						Desktop.getDesktop().browse(new URI("https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=SYDQUCMNMFMR8&lc=FI&item_name=Pdf%20scissors&item_number=pdfscissors&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted"));
+					} catch (URISyntaxException e) {
+						JOptionPane.showMessageDialog(MainFrame.this, "Ops! Failed to launch browser. Please visit www.pdfscissors.com to donate.");
+						e.printStackTrace();
+					} catch (IOException e) {
+						JOptionPane.showMessageDialog(MainFrame.this, "Ops! Failed to launch browser. Please visit www.pdfscissors.com to donate.");
+						e.printStackTrace();
+					}
+				}
+			}
+		});
+		return menuDonate;
 	}
 
 	/**
@@ -1082,6 +1085,8 @@ public class MainFrame extends JFrame implements ModelListener {
 			menuHelp = new JMenu("Help");
 			menuHelp.setMnemonic(KeyEvent.VK_H);
 			menuHelp.add(getMenuAbout());
+			menuHelp.addSeparator();
+			menuHelp.add(createMenuDonate());
 		}
 		return menuHelp;
 	}
