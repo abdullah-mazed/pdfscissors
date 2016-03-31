@@ -24,7 +24,7 @@ public class AboutView extends JDialog {
 
 	private static final long serialVersionUID = 1L;
 	private String url = "https://sites.google.com/site/pdfscissors/";//"www.pdfscissors.com"; // @jve:decl-index=0:
-	private String versionValue = "0.0.2 beta";
+	private String versionValue = "0.0.3 beta";
 	private String authorLabel = "Author";
 	private String authorValue = "Abdullah Al Mazed (Gagan)";
 	private String homePageValue = "<html><a href=\"" + url + "\">" + url + "</a></html>";
