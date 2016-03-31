@@ -16,15 +16,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Vector;
 
 import javax.swing.ProgressMonitor;
 
 import org.jpedal.PdfDecoder;
 import org.jpedal.exception.PdfException;
-import org.omg.IOP.IOR;
-
-import bd.amazed.pdfscissors.view.Rect;
 
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
@@ -59,6 +55,10 @@ public class PdfCropper {
 	}
 
 	public BufferedImage getImage(PropertyChangeListener listener, PageGroup pageGroup) throws PdfException {
+		return getImage(listener, pageGroup, 0, 0);
+	}
+	
+	public BufferedImage getImage(PropertyChangeListener listener, PageGroup pageGroup, int currentImageIndex, int totalImageCount) throws PdfException {
 		// TODO validate page number
 		int endPage = pageGroup.getLastPage();
 		BufferedImage lastPage = getPdfDecoder().getPageAsImage(endPage);
@@ -71,8 +71,9 @@ public class PdfCropper {
 			
 			g2d.setColor(Color.WHITE);
 			g2d.fillRect(0, 0, lastPage.getWidth(), lastPage.getHeight());
-			
-			float alpha = 0.5f;
+
+			int pageCount = pageGroup.getPageCount();
+			float alpha = pageCount > 1? 0.5f : 1f;//MOD russa: use transparency if multiple images are stacked / keep opaque if it is only 1 image 
 			int type = AlphaComposite.SRC_OVER;
 			AlphaComposite composite = AlphaComposite.getInstance(type, alpha);
 			g2d.setComposite(composite);
@@ -80,10 +81,11 @@ public class PdfCropper {
 			int r;
 			int g;
 			int b;
-			int pageCount = pageGroup.getPageCount();
 			for (int iPageInGroup = pageCount - 1; iPageInGroup >= 0 && !isCancel; iPageInGroup--) {
 				int i = pageGroup.getPageNumberAt(iPageInGroup);
 				int percentageDone = (100 * (pageCount - iPageInGroup)) / pageCount;
+				if(totalImageCount > 1)
+					percentageDone = (int) ((((double)(100 * currentImageIndex)) / totalImageCount) + ( (double) percentageDone / totalImageCount));
 				System.out.println("Stacking page: " + i + ", completed " + percentageDone);
 				listener.propertyChange(new PropertyChangeEvent(this, "progress", null, percentageDone));
 				BufferedImage pageImage = getPdfDecoder().getPageAsImage(i);
@@ -212,6 +214,11 @@ public class PdfCropper {
 
 	public static void cropPdf(PdfFile pdfFile, File targetFile, PageRectsMap pageRectsMap, int viewWidth,
 			int viewHeight, ProgressMonitor progressMonitor) throws IOException, DocumentException {
+		cropPdf(pdfFile, targetFile, pageRectsMap, -1, viewWidth, viewHeight, progressMonitor);
+	}
+	
+	public static void cropPdf(PdfFile pdfFile, File targetFile, PageRectsMap pageRectsMap, int pageIndex,//MOD russa: additional arg pageIndex: if -1 ignored, otherwise: only save this single page
+			int viewWidth, int viewHeight, ProgressMonitor progressMonitor) throws IOException, DocumentException {
 
 		File originalFile = pdfFile.getOriginalFile();
 		HashMap<String, String> pdfInfo = pdfFile.getPdfInfo();
@@ -257,7 +264,18 @@ public class PdfCropper {
 			PdfImportedPage page;
 			
 			int newPageCount = 0;
-			for (int i = 0; i < originalPageCount;) {
+			
+			int indexStart = 0;
+			int indexStartOriginal = 1;
+			//MOD russa: if pageCount > -1, only copy this single page			
+			if(pageIndex > -1){
+				//adjust start-indices / end-conditions, so that only the one page gets saved
+				indexStart = pageIndex;
+				indexStartOriginal = pageIndex + 1;
+				originalPageCount = indexStart + 1;
+			}
+			
+			for (int i = indexStart; i < originalPageCount;) {
 				++i;
 				ArrayList<java.awt.Rectangle> cropRects = pageRectsMap.getRects(i);
 				int cropCellCount = 0;
@@ -301,7 +319,7 @@ public class PdfCropper {
 			stamper = new PdfStamper(reader, new FileOutputStream(targetFile));
 			int pageCount = reader.getNumberOfPages();
 			newPageCount = 0;
-			for (int iOriginalPage = 1; iOriginalPage <= originalPageCount; iOriginalPage++) {
+			for (int iOriginalPage = indexStartOriginal; iOriginalPage <= originalPageCount; iOriginalPage++) {
 				ArrayList<java.awt.Rectangle> cropRectsInIPDFCoords = pageRectsMap.getConvertedRectsForCropping(iOriginalPage, viewWidth, viewHeight, pdfWidth, pdfHeight);
 				int cropCellCount = 0;
 				if (cropRectsInIPDFCoords != null) {

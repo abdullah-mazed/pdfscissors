@@ -15,4 +15,7 @@ public interface UIHandlerListener {
 
 	public void rectsStateChanged();
 	
+	//MOD russa: added support for selection change events
+	public void selectionChanged(Rect newSelection, Rect oldSelection);
+	
 }

@@ -7,6 +7,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
 import java.util.Iterator;
 
 import javax.swing.JComponent;
@@ -57,6 +58,17 @@ public class PageGroupRenderer extends JComponent implements ListCellRenderer {
 		int offsetFromEdge = padding * 2;
 		int boxWidth = getWidth() - offsetFromEdge * 2;
 		int boxHeight = getHeight() - offsetFromEdge * 2 - getFontMetrics(getFont()).getHeight();
+		
+		//MOD russa: adjust aspect ration:
+		float ar = pdfWidth / pdfHeight;
+		int newWidth = (int)(boxHeight * ar);
+		if(newWidth > boxWidth){
+			boxHeight = (int) (boxWidth / ar);
+		} else {
+			boxWidth = newWidth;
+		}
+		
+		
 		g.setColor(Color.white);
 		g.fillRect(offsetFromEdge, offsetFromEdge, boxWidth , boxHeight);
 		g.setColor(Color.black);
@@ -66,7 +78,7 @@ public class PageGroupRenderer extends JComponent implements ListCellRenderer {
 		g.drawLine(offsetFromEdge + boxWidth + 1, offsetFromEdge + 1, offsetFromEdge + boxWidth + 1, offsetFromEdge + boxHeight + 1);
 	
 		if (currentGroup.getStackImage() != null) {
-			g.drawImage(currentGroup.getStackImage().getScaledInstance(boxWidth, boxHeight, Image.SCALE_FAST), offsetFromEdge, offsetFromEdge, this);
+			g.drawImage(currentGroup.getStackImage(boxWidth, boxHeight), offsetFromEdge, offsetFromEdge, this);
 		}
 		
 		Iterator<Rect> iter = currentGroup.getRects().iterator();

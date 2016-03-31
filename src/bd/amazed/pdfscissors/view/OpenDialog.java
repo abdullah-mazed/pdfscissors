@@ -8,11 +8,15 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.util.Vector;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -20,39 +24,56 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.border.EmptyBorder;
 
 import bd.amazed.pdfscissors.model.Model;
 import bd.amazed.pdfscissors.model.PageGroup;
+
 import javax.swing.JCheckBox;
 
 public class OpenDialog extends JDialog {
 
 	private final JPanel contentPanel = new JPanel();
-	private JTextField filePath;
+//	private JTextField filePath;//MOD russa: immediately load file
 	private MainFrame mainFrame;
 	protected File file;
 	private Vector<Component> advancedOptions;
+	
+	private ButtonGroup stackGroupTypeChoices;//MOD russa: refactored
+	private JCheckBox chckbxCreateStackedView;//MOD russa: refactored
+	private JButton btnBrowse;//MOD russa: refactored
+	
+	public static final int DEFAULT_OPEN_OPTION_STACKED_TYPE = PageGroup.GROUP_TYPE_INDIVIDUAL;//MOD russa: default opening option (CONSTANT)
+	public static final boolean DEFAULT_OPEN_OPTION_ADD_STACKED_VIEW_MODE = true;//MOD russa: default opening option (CONSTANT)
+	private int defaultOpenOptionStackType;//MOD russa: default opening option
+	private boolean defaultOpenOptionAddStackedView;//MOD russa: default opening option
+	
 
-	/**
-	 * Launch the application.
-	 */
-	public static void main(String[] args) {
-		try {
-			OpenDialog dialog = new OpenDialog();
-			dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-			dialog.setVisible(true);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+//	/**
+//	 * Launch the application.
+//	 */
+//	public static void main(String[] args) {
+//		try {
+//			OpenDialog dialog = new OpenDialog();
+//			dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+//			dialog.setVisible(true);
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//	}
 
 	/**
 	 * Create the dialog.
 	 */
 	public OpenDialog() {
+		
+		//MOD russa: set default options
+		defaultOpenOptionStackType = getPageGroupTypeSetting();
+		defaultOpenOptionAddStackedView = getStackedViewSetting();
+				
 		advancedOptions = new Vector<Component>();
-		setTitle("Open pdf");		
+		setTitle("Open PDF");		
 		setBounds(100, 100, 509, 299);
 		getContentPane().setLayout(new BorderLayout());
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -63,54 +84,71 @@ public class OpenDialog extends JDialog {
 		gbl_contentPanel.columnWeights = new double[]{0.0, 0.0, Double.MIN_VALUE};
 		gbl_contentPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
 		contentPanel.setLayout(gbl_contentPanel);
-		{
-			JLabel lblFileLocation = new JLabel("File location");
-			GridBagConstraints gbc_lblFileLocation = new GridBagConstraints();
-			gbc_lblFileLocation.anchor = GridBagConstraints.NORTHWEST;
-			gbc_lblFileLocation.insets = new Insets(0, 0, 5, 5);
-			gbc_lblFileLocation.gridx = 0;
-			gbc_lblFileLocation.gridy = 0;
-			contentPanel.add(lblFileLocation, gbc_lblFileLocation);
-		}
-		{
-			filePath = new JTextField();
-			filePath.setEditable(false);
-			GridBagConstraints gbc_filePath = new GridBagConstraints();
-			gbc_filePath.fill = GridBagConstraints.HORIZONTAL;
-			gbc_filePath.insets = new Insets(0, 0, 5, 5);
-			gbc_filePath.gridx = 0;
-			gbc_filePath.gridy = 1;
-			contentPanel.add(filePath, gbc_filePath);
-			filePath.setColumns(10);
-		}
+//		{//MOD russa: immediately load file (no file-input / path field needed anymore)
+//			JLabel lblFileLocation = new JLabel("File location");
+//			GridBagConstraints gbc_lblFileLocation = new GridBagConstraints();
+//			gbc_lblFileLocation.anchor = GridBagConstraints.NORTHWEST;
+//			gbc_lblFileLocation.insets = new Insets(0, 0, 5, 5);
+//			gbc_lblFileLocation.gridx = 0;
+//			gbc_lblFileLocation.gridy = 0;
+//			contentPanel.add(lblFileLocation, gbc_lblFileLocation);
+//		}
+//		{
+//			filePath = new JTextField();
+//			filePath.setEditable(false);
+//			GridBagConstraints gbc_filePath = new GridBagConstraints();
+//			gbc_filePath.fill = GridBagConstraints.HORIZONTAL;
+//			gbc_filePath.insets = new Insets(0, 0, 5, 5);
+//			gbc_filePath.gridx = 0;
+//			gbc_filePath.gridy = 1;
+//			contentPanel.add(filePath, gbc_filePath);
+//			filePath.setColumns(10);
+//		}
 		
-		final ButtonGroup stackGroupTypeChoices = new ButtonGroup();
+		//MOD russa: re-factored, i.e. extracted file open/browse as action
+		AbstractAction browseAction = new AbstractAction() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				showFileChooserDialog(true, false);//false, false);//MOD russa: immediately load file
+			}
+		};
+		
+		//MOD russa: add "open" for hot-key CTRL + O
+		contentPanel.getActionMap().put("Open", browseAction);
+		contentPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+		        KeyStroke.getKeyStroke(KeyEvent.VK_O, KeyEvent.CTRL_MASK ), "Open"
+		);
+		
+		stackGroupTypeChoices = new ButtonGroup();
 		String lastSelectionOption = Model.getInstance().getProperties().getProperty(Model.PROPERTY_LAST_STACK_TYPE);
 		{
-			JButton btnBrowse = new JButton("Open");
-			GridBagConstraints gbc_btnBrowse = new GridBagConstraints();
-			gbc_btnBrowse.insets = new Insets(0, 0, 5, 0);
-			gbc_btnBrowse.anchor = GridBagConstraints.NORTHEAST;
-			gbc_btnBrowse.gridx = 1;
-			gbc_btnBrowse.gridy = 1;
-			contentPanel.add(btnBrowse, gbc_btnBrowse);
-			btnBrowse.addActionListener(new ActionListener() {
-				
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					showFileChooserDialog();
-				}
-			});
+			btnBrowse = new JButton("Open...");
+			btnBrowse.setMnemonic('O');
+//			GridBagConstraints gbc_btnBrowse = new GridBagConstraints();//MOD russa: immediately load file (re-locate open button to be next to cancel-button)
+//			gbc_btnBrowse.insets = new Insets(0, 0, 5, 0);
+//			gbc_btnBrowse.anchor = GridBagConstraints.NORTHEAST;
+//			gbc_btnBrowse.gridx = 1;
+//			gbc_btnBrowse.gridy = 1;
+//			contentPanel.add(btnBrowse, gbc_btnBrowse);
+//			btnBrowse.addActionListener(new ActionListener() {
+//				
+//				@Override
+//				public void actionPerformed(ActionEvent e) {
+//					showFileChooserDialog(true, false);//false, false);//MOD russa: immediately load file
+//				}
+//				
+//			});
+			btnBrowse.addActionListener(browseAction);
 		}
-		{
-			JLabel lblHowDoYou = new JLabel("How do you want to crop?");
-			GridBagConstraints gbc_lblHowDoYou = new GridBagConstraints();
-			gbc_lblHowDoYou.anchor = GridBagConstraints.WEST;
-			gbc_lblHowDoYou.insets = new Insets(0, 0, 5, 5);
-			gbc_lblHowDoYou.gridx = 0;
-			gbc_lblHowDoYou.gridy = 2;
-			contentPanel.add(lblHowDoYou, gbc_lblHowDoYou);
-		}
+//		{
+//			JLabel lblHowDoYou = new JLabel("How do you want to crop?");
+//			GridBagConstraints gbc_lblHowDoYou = new GridBagConstraints();
+//			gbc_lblHowDoYou.anchor = GridBagConstraints.WEST;
+//			gbc_lblHowDoYou.insets = new Insets(0, 0, 5, 5);
+//			gbc_lblHowDoYou.gridx = 0;
+//			gbc_lblHowDoYou.gridy = 2;
+//			contentPanel.add(lblHowDoYou, gbc_lblHowDoYou);
+//		}
 		{
 			JRadioButton rdbtnAllPagesTogether = new JRadioButton("All pages together (Easiest way)");
 			stackGroupTypeChoices.add(rdbtnAllPagesTogether);
@@ -175,7 +213,7 @@ public class OpenDialog extends JDialog {
 			gbc_btnShowAdvancedOptions.gridy = 7;
 			contentPanel.add(btnShowAdvancedOptions, gbc_btnShowAdvancedOptions);
 		}
-		final JCheckBox chckbxCreateStackedView = new JCheckBox("Create stacked view that helps cropping");
+		chckbxCreateStackedView = new JCheckBox("Create stacked view that helps cropping");
 		{	
 			chckbxCreateStackedView.setSelected(true);
 			GridBagConstraints gbc_chckbxCreateStackedView = new GridBagConstraints();
@@ -193,39 +231,135 @@ public class OpenDialog extends JDialog {
 			JPanel buttonPane = new JPanel();
 			buttonPane.setLayout(new FlowLayout(FlowLayout.RIGHT));
 			getContentPane().add(buttonPane, BorderLayout.SOUTH);
-			{
-				JButton okButton = new JButton("OK");
-				okButton.addActionListener(new ActionListener() {
-					public void actionPerformed(ActionEvent arg0) {
-						if (file == null) {
-							JOptionPane.showMessageDialog(OpenDialog.this, "Select a pdf file first");
-							return;
-						}
-						int type = Integer.valueOf(stackGroupTypeChoices.getSelection().getActionCommand());
-						Model.getInstance().getProperties().setProperty(Model.PROPERTY_LAST_STACK_TYPE, stackGroupTypeChoices.getSelection().getActionCommand());
-						OpenDialog.this.dispose();
-						mainFrame.openFile(file, type, chckbxCreateStackedView.isSelected());
-					}
-				});
-				okButton.setActionCommand("OK");
-				buttonPane.add(okButton);
-				getRootPane().setDefaultButton(okButton);
-			}
+//			{//MOD russa: immediately load file (no OK-button needed anymore)
+//				JButton okButton = new JButton("OK");
+//				okButton.addActionListener(new ActionListener() {
+//					public void actionPerformed(ActionEvent arg0) {
+//						doLoadFile(false);
+//					}
+//				});
+//				okButton.setActionCommand("OK");
+//				buttonPane.add(okButton);
+//				getRootPane().setDefaultButton(okButton);
+//			}	
+			
+			//MOD russa: refactored cancel as AbstractAction
+			AbstractAction cancelAction = new AbstractAction(){
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					OpenDialog.this.dispose();
+				}
+			};
+			
+			//MOD russa: add "cancel" for hot-key ESC
+			buttonPane.getActionMap().put("Cancel", cancelAction);
+			buttonPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+			        KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "Cancel"
+			);
+			
 			{
 				JButton cancelButton = new JButton("Cancel");
-				cancelButton.addActionListener(new ActionListener() {
-					public void actionPerformed(ActionEvent e) {
-						OpenDialog.this.dispose();
-					}
-				});
+				cancelButton.setMnemonic('C');
+				cancelButton.addActionListener(cancelAction);
+//				cancelButton.addActionListener(new ActionListener() {//MOD russa
+//					public void actionPerformed(ActionEvent e) {
+//						OpenDialog.this.dispose();
+//					}
+//				});
 				cancelButton.setActionCommand("Cancel");
 				buttonPane.add(cancelButton);
 			}
+			
+			
+			
+			//add browse button:
+			buttonPane.add(btnBrowse);
+			btnBrowse.requestFocusInWindow();
 		}
 	
 	}
+
+
+	/**
+	 * MOD russa: getter for extended file open option "create stacked view"
+	 * 
+	 * Returns the setting from the properties or the default value.
+	 */
+	public static boolean getStackedViewSetting() {
+		String defaultCreateStackedView = Model.getInstance().getProperties().getProperty(Model.PROPERTY_DEFAULT_CREATE_STACKED_VIEW, Boolean.toString(DEFAULT_OPEN_OPTION_ADD_STACKED_VIEW_MODE));//MOD russa: set default stack-type, if it was set
+		try{
+			return Boolean.valueOf(defaultCreateStackedView);
+		} catch(Exception e){
+			return DEFAULT_OPEN_OPTION_ADD_STACKED_VIEW_MODE;
+		}
+	}
 	
-	public void showFileChooserDialog() {
+	/**
+	 * MOD russa: getter for extended file open option "page grouping type" (i.e. ALL, EVEN_AND_ODD, SINGLE_PAGES)
+	 * 
+	 * Returns the setting from the properties or the default value.
+	 */
+	public static int getPageGroupTypeSetting() {
+		String defaultStackTypeOption = Model.getInstance().getProperties().getProperty(Model.PROPERTY_DEFAULT_STACK_TYPE, Integer.toString(DEFAULT_OPEN_OPTION_STACKED_TYPE));//MOD russa: set default stack-type, if it was set
+		try{
+			return Integer.valueOf(defaultStackTypeOption);
+		} catch(NumberFormatException e){
+			return DEFAULT_OPEN_OPTION_STACKED_TYPE;
+		}
+	}
+	
+	
+	
+	@Override
+	public void setVisible(boolean b) {
+		
+		super.setVisible(b);
+		
+		//focus browse-button when dialog is shown:
+		if(b)
+			btnBrowse.requestFocusInWindow();
+	}
+
+	/**
+	 * MOD russa: refactored (extracted method)
+	 * 
+	 * MOD russa: added boolean argument:
+	 * 
+	 * @param isUseDefaultOptions
+	 * 			if TRUE the default settings for the extended options are used 
+	 */
+	private void doLoadFile(boolean isUseDefaultOptions){
+		if (file == null) {
+			JOptionPane.showMessageDialog(OpenDialog.this, "Select a pdf file first");
+			return;
+		}
+		int type = Integer.valueOf(stackGroupTypeChoices.getSelection().getActionCommand());
+		Model.getInstance().getProperties().setProperty(Model.PROPERTY_LAST_STACK_TYPE, stackGroupTypeChoices.getSelection().getActionCommand());
+		OpenDialog.this.dispose();
+		
+		boolean isCreateStackedView = chckbxCreateStackedView.isSelected();
+		
+		if(isUseDefaultOptions){//MOD russa
+			type = defaultOpenOptionStackType;
+			isCreateStackedView = defaultOpenOptionAddStackedView;
+		}
+		
+		mainFrame.openFile(file, type, isCreateStackedView);
+	}
+	
+//	public void showFileChooserDialog(){
+//		showFileChooserDialog(false, false);
+//	}
+
+	/**
+	 * MOD russa: added two boolean arguments:
+	 * 
+	 * @param isCloseMainDialog
+	 * 			if TRUE the selected file is loaded immediately (if no file was selected, only the internal file-selection is updated/cleared)
+	 * @param isUseDefaultOptions
+	 * 			if TRUE the default settings for the extended options are used 
+	 */
+	public void showFileChooserDialog(boolean isCloseMainDialog, boolean isUseDefaultOptions) {//MOD russa: added boolean argument -> if TRUE, loading the file is immediately triggered
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileFilter(mainFrame.createFileFilter());
 		String lastFile = Model.getInstance().getProperties().getProperty(Model.PROPERTY_LAST_FILE);
@@ -234,16 +368,23 @@ public class OpenDialog extends JDialog {
 			fileChooser.setCurrentDirectory(new File(lastFile));
 		}
 
-		int retval = fileChooser.showOpenDialog(OpenDialog.this);
+		int retval = fileChooser.showOpenDialog(mainFrame);
 		if (retval == JFileChooser.APPROVE_OPTION) {
 			file = fileChooser.getSelectedFile();
 			if (file != null) {
 				Model.getInstance().getProperties().setProperty(Model.PROPERTY_LAST_FILE, file.getParentFile().getAbsolutePath());
-				filePath.setText(file.getAbsolutePath());
-			} else {
-				filePath.setText("");
-			}
+//				filePath.setText(file.getAbsolutePath());//MOD russa: immediately load file
+				
+				if(isCloseMainDialog){//MOD russa
+					doLoadFile(isUseDefaultOptions);
+				}
+				
+			} 
+//			else {//MOD russa: immediately load file
+//				filePath.setText("");
+//			}
 		}
+		
 	}
 
 	public void seMainFrame(MainFrame mainFrame) {

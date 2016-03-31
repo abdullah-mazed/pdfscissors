@@ -23,7 +23,7 @@ import javax.swing.JDialog;
 public class AboutView extends JDialog {
 
 	private static final long serialVersionUID = 1L;
-	private String url = "www.pdfscissors.com"; // @jve:decl-index=0:
+	private String url = "https://sites.google.com/site/pdfscissors/";//"www.pdfscissors.com"; // @jve:decl-index=0:
 	private String versionValue = "0.0.2 beta";
 	private String authorLabel = "Author";
 	private String authorValue = "Abdullah Al Mazed (Gagan)";
@@ -33,7 +33,9 @@ public class AboutView extends JDialog {
 
 	"<B>Author: </B> Abdullah Al Mazed (Gagan)" + "<BR><BR>" +
 	
-	"<B>Code contributor: </B> Sergio Gragera Camino" + "<BR><BR>" +
+	"<B>Code contributor: </B> Sergio Gragera Camino" +
+
+		", russa" + "<BR><BR>" +//MOD russa
 
 	"<B> License: </B>This is a free open source software.<BR>" + "Use it for free respecting Affero General Public License.<BR> <BR>" +
 
