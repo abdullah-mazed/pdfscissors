@@ -32,7 +32,8 @@ public class UIHandler {
 	
 	public void setPageGroup(PageGroup pageGroup) {
 		rects = pageGroup.getRects();
-		selectedRect = null;
+//		selectedRect = null;
+		setSelectedRect(null);//MOD russa: FIX use set-method so that selection notification etc. get sent
 		this.currentPageGroup = pageGroup;
 		firePageGroupSelectionChanged(pageGroup);
 	}
@@ -63,12 +64,19 @@ public class UIHandler {
 
 	protected void setSelectedRect(Rect rectToSelect) {
 		if (selectedRect != rectToSelect) { // if change in selection
+			
+			Rect oldSel = selectedRect;//MOD russa: add support for selection listener
+			Rect newSel = rectToSelect;//MOD russa: add support for selection listener
+			
 			if (selectedRect != null) // deselect previous selection
 				selectedRect.setSelected(false);
 			selectedRect = rectToSelect; // set selection to new rect
 			if (selectedRect != null) {
 				rectToSelect.setSelected(true);
 			}
+			
+			//MOD russa: add support for selection listener
+			notifySelectionChanged(newSel, oldSel);
 		}
 	}
 
@@ -217,6 +225,13 @@ public class UIHandler {
 	private void firePageGroupSelectionChanged(PageGroup pageGroup) {
 		for (UIHandlerListener listener : listeners) {
 			listener.pageGroupSelected(pageGroup);
+		}
+	}
+	
+	//MOD russa: support for selection change events
+	public void notifySelectionChanged(Rect newSelection, Rect oldSelection) {
+		for (UIHandlerListener listener : listeners) {
+			listener.selectionChanged(newSelection, oldSelection);
 		}
 	}
 	

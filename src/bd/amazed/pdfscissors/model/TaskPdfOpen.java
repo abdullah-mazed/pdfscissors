@@ -5,14 +5,10 @@ import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
-import java.rmi.server.LoaderHandler;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.swing.JOptionPane;
-import javax.swing.ProgressMonitor;
 import javax.swing.SwingWorker;
 
 import com.itextpdf.text.pdf.PdfException;
@@ -54,26 +50,18 @@ public class TaskPdfOpen extends SwingWorker<Vector<PageGroup>, Void> {
 
 			if (shouldCreateStackView && groupType != PageGroup.GROUP_TYPE_INDIVIDUAL) {
 				setProgress(0);
-				PropertyChangeListener propertyChangeListener = new PropertyChangeListener() {
-					@Override
-					public void propertyChange(PropertyChangeEvent evt) {
-						firePropertyChange(evt.getPropertyName(), evt.getOldValue(), evt.getNewValue());
-					}
-				};
-
-				for (int i = 0; i < pageGroups.size(); i++) {
-					PageGroup pageGroup = pageGroups.elementAt(i);
-					BufferedImage image = cropper.getImage(propertyChangeListener, pageGroup);
-
-					if (image == null) {
-						debug("Ups.. null image for " + pdfFile.getNormalizedFile());
-					} else {
-						debug("PDF loaded " + pageGroup + " from " + pdfFile.getNormalizedFile());
-					}
-					pageGroup.setStackImage(image);
-
-				}
+				TaskCreateThumbnails thumbnailTask = launchThumbnailTask(pdfFile, pageGroups);
+				
+				//make this thread wait, until the thumbnails-thread has finished:
+				// (images are previews for stacked-pages, i.e. required)
+				thumbnailTask.get();
+				
 				setProgress(100);
+			}
+			else {
+				//start thumbnails-thread without waiting for it to finish
+				// (images are only previews for single pages, i.e. not required)
+				launchThumbnailTask(pdfFile, pageGroups);
 			}
 			return pageGroups;
 		} finally {
@@ -111,9 +99,28 @@ public class TaskPdfOpen extends SwingWorker<Vector<PageGroup>, Void> {
 			}
 		}
 	}
+	
+	private TaskCreateThumbnails launchThumbnailTask(PdfFile file, Vector<PageGroup> pageGroups) {
+		
+		final TaskCreateThumbnails task = new TaskCreateThumbnails(file, pageGroups, owner);
+		
+		//"forward" changes from the sub-task:
+		task.addPropertyChangeListener(new PropertyChangeListener() {
+			
+			@Override
+			public void propertyChange(PropertyChangeEvent evt) {
+				firePropertyChange(evt.getPropertyName(), evt.getOldValue(), evt.getNewValue());
+			}
+		});
+		
+		task.execute();
+		
+		return task;
+
+	}
 
 	private void debug(String string) {
-		System.out.println("TaskPdfOpen:" + string);
+		System.out.println("TaskPdfOpen: " + string);
 	}
 
 	/**

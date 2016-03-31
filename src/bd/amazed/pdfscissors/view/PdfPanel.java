@@ -193,6 +193,11 @@ public class PdfPanel extends PdfDecoder implements ModelListener, RectChangeLis
 	}
 	
 	@Override
+	public void selectionChanged(Rect newSelection, Rect oldSelection) {//MOD russa
+
+	}
+	
+	@Override
 	public void pageGroupChanged(Vector<PageGroup> pageGroups) {
 		
 	}
