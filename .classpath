@@ -3,8 +3,16 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="res"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
-	<classpathentry exported="true" kind="lib" path="lib/itextpdf-5.0.4.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jpedal-4.37b36.jar"/>
-	<classpathentry kind="lib" path="lib/jgoodies-forms-1.10.jar" sourcepath="lib/jgoodies-forms-1.10-sources.jar"/>
+	<classpathentry kind="lib" path="lib/jgoodies-forms-1.10.jar" sourcepath="lib/jgoodies-forms-1.10-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/pdfscissors/lib/jgoodies-forms-1.10-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="lib/itextpdf-5.5.9.jar" sourcepath="lib/itextpdf-5.5.9-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/pdfscissors/lib/itextpdf-5.5.9-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="lib/jpedal-4.37b36.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
