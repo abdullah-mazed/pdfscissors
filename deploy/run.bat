@@ -1,1 +1,1 @@
-java -jar pdfscissors.jar
+javaw -jar pdfscissors.jar
