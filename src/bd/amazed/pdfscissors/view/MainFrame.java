@@ -10,7 +10,6 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.MenuItem;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -20,12 +19,17 @@ import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Properties;
 import java.util.Vector;
 
 import javax.imageio.ImageIO;
@@ -37,7 +41,9 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
+import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -45,6 +51,9 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSlider;
+import javax.swing.JSplitPane;
+import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
@@ -58,6 +67,7 @@ import bd.amazed.pdfscissors.model.ModelListener;
 import bd.amazed.pdfscissors.model.PageGroup;
 import bd.amazed.pdfscissors.model.PageRectsMap;
 import bd.amazed.pdfscissors.model.PdfFile;
+import bd.amazed.pdfscissors.model.RectChangeListener;
 import bd.amazed.pdfscissors.model.TaskPdfOpen;
 import bd.amazed.pdfscissors.model.TaskPdfSave;
 import bd.amazed.pdfscissors.model.TempFileManager;
@@ -76,8 +86,17 @@ public class MainFrame extends JFrame implements ModelListener {
 	/** Panel containing PdfPanels. */
 	private JPanel pdfPanelsContainer = null;
 	private ButtonGroup rectButtonGroup = null; // @jve:decl-index=0:
+	
+	//MOD russa: horizontal SplitPane for pageGroupScrollPanel (left) and scrollPanel (right)
+	private JSplitPane spPdfPanel; 
+	
 	/** Contains all components that are disabled until file open. */
 	private Vector<Component> openFileDependendComponents = null;
+	
+
+	/** MOD russa: Contains all components that are disabled if no (cropping) rectangle is selected. */
+	private Vector<Component> selectedRectDependendComponents = null;
+	
 	/**
 	 * Keeps track of already registered listeners. Used to re-register listners.
 	 */
@@ -89,6 +108,8 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JButton buttonDeleteRect = null;
 	private JButton buttonDelAll = null;
 	private JButton buttonSave = null;
+	private JButton buttonSaveCurrent = null;//MOD russa
+	private JButton buttonOpenExtended = null;//MOD russa
 	private JButton buttonSplitHorizontal = null;
 	private JButton buttonSplitVertical = null;
 	private JPanel bottomPanel;
@@ -96,7 +117,9 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JMenuBar jJMenuBar = null;
 	private JMenu menuFile = null;
 	private JMenuItem menuFileOpen = null;
+	private JMenuItem menuFileOpenExtended = null;//MOD russa
 	private JMenuItem menuSave = null;
+	private JMenuItem menuSaveCurrent = null;//MOD russa
 	private JMenu menuEdit = null;
 	private JMenuItem menuCopy = null;
 	private JMenuItem menuCut = null;
@@ -111,6 +134,12 @@ public class MainFrame extends JFrame implements ModelListener {
 	private PageGroupRenderer pageGroupListRenderer;
 	private JButton forwardButton = null;
 	private JButton backButton = null;
+	
+	private JFormattedTextField tfEditX = null;
+	private JFormattedTextField tfEditY = null;
+	private JFormattedTextField tfEditWidth = null;
+	private JFormattedTextField tfEditHeight = null;
+	
 
 	/**
 	 * This is the default constructor
@@ -119,6 +148,7 @@ public class MainFrame extends JFrame implements ModelListener {
 		super();
 		modelRegisteredListeners = new Vector<ModelListener>();
 		openFileDependendComponents = new Vector<Component>();
+		selectedRectDependendComponents = new Vector<Component>();//MOD russa
 		initialize();
 		registerComponentsToModel();
 		updateOpenFileDependents();
@@ -141,6 +171,9 @@ public class MainFrame extends JFrame implements ModelListener {
 			@Override
 			public void windowClosing(WindowEvent e) {
 				super.windowClosing(e);
+
+				storeWindowPosition();//rusaa MOD: store for next execution
+				
 				Model.getInstance().close();
 				getDefaultPdfPanel().closePdfFile(); // TODO may be implement a better way to notify to close
 				TempFileManager.getInstance().clean();
@@ -161,10 +194,79 @@ public class MainFrame extends JFrame implements ModelListener {
 		this.setTitle("PDF Scissors");
 		this.setSize(new Dimension(800, 600));
 		this.setMinimumSize(new Dimension(200, 200));
-		Dimension screen = getToolkit().getScreenSize();
-		this.setBounds((screen.width - getWidth()) / 2, (screen.height - getHeight()) / 2, getWidth(), getHeight());
-		this.setExtendedState(JFrame.MAXIMIZED_BOTH);
+//		Dimension screen = getToolkit().getScreenSize();
+//		this.setBounds((screen.width - getWidth()) / 2, (screen.height - getHeight()) / 2, getWidth(), getHeight());
+//		this.setExtendedState(JFrame.MAXIMIZED_BOTH);
+		restoreWindowPosition();//rusaa MOD: restore from previous execution
+	}
+	
+	//MOD russa: store window position
+	private void storeWindowPosition(){
+		
+		Properties prop = Model.getInstance().getProperties();
+		
+		prop.setProperty("x", Integer.toString(this.getX()) );
+		prop.setProperty("y", Integer.toString(this.getY()) );
+		prop.setProperty("w", Integer.toString(this.getWidth()) );
+		prop.setProperty("h", Integer.toString(this.getHeight()) );
+		prop.setProperty("ext", Integer.toString(this.getExtendedState() ));
+		
+	}
+	//MOD russa: HELPER for retrieving INT values from properties
+	private int doGetProperty(String name, int defaultValue, Properties properties){
+		
+		if(!properties.containsKey(name))
+			return defaultValue;
+		
+		String str = properties.getProperty(name);
+		
+		int value;
+		try {
+			value = Integer.valueOf(str, 10);	
+		} catch (NumberFormatException e){
+			value = defaultValue;
+		}
+		
+		return value;
+	}
+	//MOD russa: restore window position
+	private void restoreWindowPosition(){
+		
+		Properties prop = Model.getInstance().getProperties();
 
+		Dimension screen = getToolkit().getScreenSize();
+		int defX = (screen.width - getWidth()) / 2;
+		int defY = (screen.height - getHeight()) / 2;
+		int defW = getWidth();
+		int defH = getHeight();
+		int defState = JFrame.MAXIMIZED_BOTH;
+		
+		int x,y;
+		x = doGetProperty("x", defX, prop);
+		y = doGetProperty("y", defY, prop);
+		
+		int w,h;
+		w = doGetProperty("w", defW, prop);
+		h = doGetProperty("h", defH, prop);
+		
+		int ext = doGetProperty("ext", defState, prop);
+		
+		
+		if(w < 200 || w >= screen.width){
+			w = defW;
+		}
+		
+		if(h < 200 || h >= screen.height){
+			h = defH;
+		}
+		
+		if(ext < 0){
+			ext = defState;
+		}
+		
+		this.setLocation(x, y);
+		this.setSize(w, h);
+		this.setExtendedState(ext);
 	}
 
 	private void registerComponentsToModel() {
@@ -210,6 +312,38 @@ public class MainFrame extends JFrame implements ModelListener {
 			component.setEnabled(shouldEnable);
 		}
 	}
+	
+	/**
+	 * MOD russa: Enable/disable buttons etc which should be disabled when there is no (cropping) rectangle selected.
+	 */
+	private void updateRectSelectedDependents(boolean isEnable) {
+		for (Component component : selectedRectDependendComponents) {
+			if(component.isEnabled() != isEnable)
+				component.setEnabled(isEnable);
+		}
+	}
+	
+	/**
+	 * MOD russa: Enable/disable buttons etc which should be disabled when there is no (cropping) rectangle selected.
+	 */
+	private void updateRectEditor(Rect rect) {
+		int x,y,w,h;
+		if(rect == null){
+			x = y = w = h = 0;
+		}
+		else {
+			Rectangle b = rect.getRectangleBound();
+			x = b.x;
+			y = b.y;
+			w = b.width;
+			h = b.height;
+		}
+		
+		tfEditX.setValue(x);
+		tfEditY.setValue(y);
+		tfEditWidth.setValue(w);
+		tfEditHeight.setValue(h);
+	}
 
 	/**
 	 * This method initializes jContentPane
@@ -220,10 +354,13 @@ public class MainFrame extends JFrame implements ModelListener {
 		if (jContentPane == null) {
 			jContentPane = new JPanel();
 			jContentPane.setLayout(new BorderLayout());
-			jContentPane.add(getScrollPanel(), BorderLayout.CENTER);
+//			jContentPane.add(getScrollPanel(), BorderLayout.CENTER);
 			jContentPane.add(getToolBar(), BorderLayout.NORTH);
 			jContentPane.add(getBottomPanel(), BorderLayout.SOUTH);
-			jContentPane.add(getPageGroupPanel(), BorderLayout.WEST);
+//			jContentPane.add(getPageGroupPanel(), BorderLayout.WEST);
+			
+			spPdfPanel = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, getPageGroupPanel(), getScrollPanel());
+			jContentPane.add(spPdfPanel, BorderLayout.CENTER);
 		}
 		return jContentPane;
 	}
@@ -279,12 +416,33 @@ public class MainFrame extends JFrame implements ModelListener {
 			setButton(jButton, imageFile, text, false);
 			jButton.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
-					showFileOpenDialog();
+					showFileOpenDialog(false);
 				}
 
 			});
 		}
 		return jButton;
+	}
+	
+	/**
+	 * MOD russa: additional open-file button (opens extended file dialog)
+	 * 
+	 * @return javax.swing.JButton
+	 */
+	private JButton getButtonOpenExtended() {
+		if (buttonOpenExtended == null) {
+			buttonOpenExtended = new JButton("Open (Extended)"); // a string literal is here only for eclipse visual editor.
+			String imageFile = "/openExtended.png";
+			String text = "Open a PDF file with extenden options";
+			setButton(buttonOpenExtended, imageFile, text, false);
+			buttonOpenExtended.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					showFileOpenDialog(true);
+				}
+
+			});
+		}
+		return buttonOpenExtended;
 	}
 
 	private void setButton(AbstractButton button, String imageLocation, String tooltip, boolean isOpenFileDependent) {
@@ -304,11 +462,17 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 	}
 
-	private void showFileOpenDialog() {
+	public void showFileOpenDialog(boolean isExtendedOptions) {//MOD russa: added boolean argument
 		OpenDialog openDialog = new OpenDialog();
 		openDialog.seMainFrame(this);
 		openDialog.setModal(true);
-		openDialog.setVisible(true);
+		openDialog.setLocationRelativeTo(this);//MOD russa
+		
+		if(isExtendedOptions){
+			openDialog.setVisible(true);
+		} else {
+			openDialog.showFileChooserDialog(true, true);
+		}
 		
 	}
 	
@@ -361,8 +525,43 @@ public class MainFrame extends JFrame implements ModelListener {
 
 			}
 		});
+		
+		task.addPropertyChangeListener(new PropertyChangeListener() {
+			private boolean isThumbnailStarted = false;
+			@Override
+			public void propertyChange(PropertyChangeEvent evt) {
+				
+//				System.err.println(evt.getSource().getClass().getSimpleName() + " " + evt.getPropertyName() + ": "+ evt.getOldValue() +" -> "+evt.getNewValue());
+				
+				if ("done".equals(evt.getPropertyName())) {
+
+
+					// update (the size for) the thumbnail list view
+					// (but only after the thumbnail-task has started)
+					if(isThumbnailStarted){
+						invalidatePdfThumbnailView();
+						refreshPdfThumbnailView();
+					}
+					
+				} else if ("message".equals(evt.getPropertyName())) {
+					
+					invalidatePdfThumbnailView();
+					
+					//"message" is send by the thumbnail-task:
+					//	remember, when it is started -> now we should update the size for the thumbnail list view
+					if(!isThumbnailStarted){
+						isThumbnailStarted = true;
+						refreshPdfThumbnailView();
+					}
+				}
+				
+			}
+		});
+		
 		// what happens on ok
 		task.execute();
+		
+		stackViewCreationDialog.setLocationRelativeTo(this);
 
 		stackViewCreationDialog.setVisible(true);
 
@@ -397,6 +596,34 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 		return scrollPanel;
 	}
+	
+	public void invalidatePdfThumbnailView(){//MOD russa
+		//update thumbnail view when new images were loaded / created
+		getPageGroupList().invalidate();
+		getPageGroupList().repaint();
+	}
+	
+	public void refreshPdfThumbnailView(){//MOD russa
+		
+		//update thumbnail view when new images were loaded / created
+		getPageGroupList().invalidate();
+		getPageGroupList().repaint();
+		
+		//adjust width, if necessary
+//		Dimension imageDim = getPageGroupListCellRenderer().getPreferredSize();
+//		Rectangle viewRect = getPageGroupPanel().getViewportBorderBounds();
+		int adjustWidth = 2; //Math.max(0, imageDim.width - viewRect.width);
+		
+		boolean isScrollBar = getPageGroupPanel().getVerticalScrollBar().isVisible();
+		int adjustForScrollBar = isScrollBar? getPageGroupPanel().getVerticalScrollBar().getSize().width : 0;
+		
+		
+		Dimension d = getPageGroupListCellRenderer().getPreferredSize();
+		d.width += adjustWidth + adjustForScrollBar;
+		getPageGroupPanel().setPreferredSize(d);
+		
+		spPdfPanel.resetToPreferredSizes();
+	}
 
 	private void debug(String string) {
 		System.out.println("MainFrame: " + string);
@@ -420,7 +647,9 @@ public class MainFrame extends JFrame implements ModelListener {
 		if (toolBar == null) {
 			toolBar = new JToolBar();
 			toolBar.add(getJButton());
+			toolBar.add(getButtonOpenExtended());//MOD russa
 			toolBar.add(getButtonSave());
+			toolBar.add(getButtonSaveCurrent());//MOD russa
 			toolBar.add(getButtonDraw());
 			toolBar.add(getButtonSelect());
 			toolBar.add(getButtonDeleteRect());
@@ -450,8 +679,174 @@ public class MainFrame extends JFrame implements ModelListener {
 			bottomPanel.add(getPageSelectionCombo(), null);
 			bottomPanel.add(forwardButton);
 			forwardButton.addActionListener(new PageChangeHandler(true));
+			
+			//MOD add controls for rect-editing
+			
+			JPanel pnlRectEditor = new JPanel();
+			
+			JLabel l = new JLabel();
+			l.setIcon(new ImageIcon(MainFrame.class.getResource("/draw.png"), "edit current selection"));
+			pnlRectEditor.add(l);
+			
+			NumberFormat format = NumberFormat.getNumberInstance();
+			format.setParseIntegerOnly(true);
+			format.setMinimumIntegerDigits(0);
+			
+			//change listener that transfers changes from input-fields to the currently selected (cropping) rectangle
+			PropertyChangeListener changeListener = new PropertyChangeListener() {
+				@Override
+				public void propertyChange(PropertyChangeEvent evt) {
+					
+//					System.out.println(((JFormattedTextField)evt.getSource()).getName() + " \t" +evt.getOldValue() + " -> " + evt.getNewValue() + "\t"+(evt.getNewValue() != null?evt.getNewValue().getClass():"NULL"));
+					
+					if(evt.getNewValue() == null){
+						return;
+					}
+					
+					String name = ((JFormattedTextField)evt.getSource()).getName();
+					
+					try{
+						
+						int value = ((Number) evt.getNewValue()).intValue();
+						Rect rect = uiHandler.getSelectedRect();
+						if(rect != null){
+							
+							int targetValue = -1;
+							Rectangle bounds = rect.getRectangleBound();
+							
+							if(name == "x"){
+								targetValue = bounds.x;
+							} else if(name == "y"){
+								targetValue = bounds.y;
+							} else if(name == "width"){
+								targetValue = bounds.width;
+							} else if(name == "height"){
+								targetValue = bounds.height;
+							}
+							
+							if(targetValue != value){
+								
+								if(name == "x"){
+									bounds.x = value;
+								} else if(name == "y"){
+									bounds.y = value;
+								} else if(name == "width"){
+									bounds.width = value;
+								} else if(name == "height"){
+									bounds.height = value;
+								}
+
+								rect.setBounds(bounds);
+								getScrollPanel().repaint();
+							}
+							
+						}
+						
+					} catch(Exception e){
+						e.printStackTrace();
+					}
+					
+				}
+			};
+			
+			tfEditX = createRectInputField("x", 'x', pnlRectEditor, format, changeListener);
+			tfEditY = createRectInputField("y", 'y', pnlRectEditor, format, changeListener);
+			tfEditWidth  = createRectInputField("width",  'w', pnlRectEditor, format, changeListener);
+			tfEditHeight = createRectInputField("height", 'h', pnlRectEditor, format, changeListener);
+						
+			bottomPanel.add(pnlRectEditor);
+			
+//			JButton btn = new JButton("refresh");
+//			btn.addActionListener(new ActionListener() {
+//				
+//				@Override
+//				public void actionPerformed(ActionEvent paramActionEvent) {
+//					invalidatePdfThumbnailView();
+//					getPageGroupList().revalidate();
+//					getJContentPane().invalidate();
+//					getJContentPane().repaint();
+//
+////					System.out.println(getPageGroupList().getSize());
+//					System.out.println(getPageGroupList().getPreferredSize());
+////					System.out.println(getPageGroupPanel().getSize());
+////					System.out.println(getPageGroupPanel().getPreferredSize());
+//
+//					System.out.println(getPageGroupPanel().getViewportBorderBounds());
+//					System.out.println(getPageGroupPanel().getVisibleRect());
+//					
+//					System.out.println(getPageGroupListCellRenderer().getPreferredSize());
+//					System.out.println(Model.getInstance().getPdf().getNormalizedPdfWidth());
+//					
+//
+//					System.out.println(getPageGroupPanel().getVerticalScrollBar().getSize() +", "+getPageGroupPanel().getVerticalScrollBar().isVisible());
+////					System.out.println(getPageGroupPanel().getVerticalScrollBar().getInsets());
+////					System.out.println(getPageGroupPanel().getVerticalScrollBar().getBorder());
+//					System.out.println(getPageGroupPanel().getHorizontalScrollBar().getSize() +", "+getPageGroupPanel().getHorizontalScrollBar().isVisible());
+//					
+//					//adjust width, if necessary
+////					Dimension imageDim = getPageGroupListCellRenderer().getPreferredSize();
+////					Rectangle viewRect = getPageGroupPanel().getViewportBorderBounds();
+//					int adjustWidth = 2; //Math.max(0, imageDim.width - viewRect.width);
+//					
+//					boolean isScrollBar = getPageGroupPanel().getVerticalScrollBar().isVisible();
+//					int adjustForScrollBar = isScrollBar? getPageGroupPanel().getVerticalScrollBar().getSize().width : 0;
+//					
+//					System.out.println("adjust " + adjustWidth +", sc "+adjustForScrollBar);
+//					
+//					
+//					Dimension d = getPageGroupListCellRenderer().getPreferredSize();//getPageGroupPanel().getPreferredSize();//
+//					d.width += adjustWidth + adjustForScrollBar;
+////					getPageGroupPanel().invalidate();
+//					getPageGroupPanel().setPreferredSize(d);
+//					
+//					sp.resetToPreferredSizes();
+//					
+//
+//					System.out.println(getPageGroupPanel().getViewportBorderBounds());
+//					System.out.println(getPageGroupPanel().getVisibleRect());
+//					
+//					boolean enable = false;
+//					if(enable){
+//						getPageGroupPanel().invalidate();
+//						getPageGroupPanel().repaint();
+//						System.out.println(getPageGroupPanel().getVerticalScrollBar().getSize());
+////						PdfFile pdfFile = Model.getInstance().getPdf();
+////						getPageGroupListCellRenderer().setPageSize(pdfFile.getNormalizedPdfWidth(), pdfFile.getNormalizedPdfHeight());
+////						getPageGroupList().invalidate(); // to recalulate size etc
+////						getPageGroupListCellRenderer().repaint();
+////						getPageGroupList().repaint();
+//					}
+//					
+//					System.out.println("------------------------------");
+//
+//				}
+//			});
+//			bottomPanel.add(btn);
+			
 		}
 		return bottomPanel;
+	}
+	
+	private JFormattedTextField createRectInputField(String name, char mnemonic, JPanel pnlRectEditor,
+			NumberFormat format, PropertyChangeListener changeListener){
+		
+		JFormattedTextField f = new JFormattedTextField(format);
+		f.setColumns(5);
+		f.setName(name);
+		f.addPropertyChangeListener("value", changeListener);
+		JLabel l = new JLabel(name + ": ");
+		l.setLabelFor(f);
+		l.setDisplayedMnemonic(mnemonic);
+		
+		pnlRectEditor.add(l);
+		pnlRectEditor.add(f);
+		
+		selectedRectDependendComponents.add(l);
+		openFileDependendComponents.add(l);
+		selectedRectDependendComponents.add(f);
+		openFileDependendComponents.add(f);
+		
+		return f;
 	}
 
 	/**
@@ -471,17 +866,67 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 		return buttonSave;
 	}
+	
+	/**
+	 * MOD russa: additional save option for saving only current selection
+	 * 
+	 * This method initializes buttonSaveCurrent
+	 * 
+	 * @return javax.swing.JButton
+	 */
+	private JButton getButtonSaveCurrent() {
+		if (buttonSaveCurrent == null) {
+			buttonSaveCurrent = new JButton("Save Current");
+			setButton(buttonSaveCurrent, "/cropCurrent.png", "Crop current selection and save to another PDF", true);
+			buttonSaveCurrent.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					saveFile(true);
+				}
+			});
+			
+			selectedRectDependendComponents.add(buttonSaveCurrent);
+			openFileDependendComponents.add(buttonSaveCurrent);
+		}
+		return buttonSaveCurrent;
+	}
 
-	private void saveFile() {
+	private void saveFile() {//MOD russa: as "proxy"
+		saveFile(false);
+	}
+	
+	private void saveFile(boolean isSaveCurrentSelection) {//MOD russa: generalized/generic method
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileFilter(createFileFilter());
 		File originalPdf = Model.getInstance().getPdf().getOriginalFile();
+		
+		//MOD russa: if only current selection is saved -> get corresponding page and prepare appropriate file name
+		int targetPageIndex = -1;
+		String namePostFix;
+		if(isSaveCurrentSelection){
+			
+			targetPageIndex = this.uiHandler.getPage() - 1;//"convert" page-number to index
+			
+			String strCount = Integer.toString(Model.getInstance().getPdf().getPageCount());
+			String strPage = Integer.toString(targetPageIndex + 1);//page number string
+			while(strCount.length() > strPage.length()){
+				strPage = "0" + strPage;
+			}
+			
+			namePostFix = "_croppedpage"+strPage;
+		}
+		else {
+			namePostFix = "_scissored";
+		}
+		
 		// find file name without extension
-		String filePath = originalPdf.getAbsolutePath();
-		int dot = filePath.lastIndexOf('.');
-		int separator = filePath.lastIndexOf(File.separator);
-		filePath = filePath.substring(0, separator + 1) + filePath.substring(separator + 1, dot) + "_scissored.pdf";
-		fileChooser.setSelectedFile(new File(filePath));
+		String fileName = originalPdf.getName();
+		int dot = fileName.lastIndexOf('.');
+		if(dot > -1)//remove file extension:
+			fileName = fileName.substring(0, dot);
+
+		fileName = fileName.substring(0, dot) + namePostFix + ".pdf";
+		fileChooser.setSelectedFile(new File(originalPdf.getParentFile(), fileName));
+		
 		int retval = fileChooser.showSaveDialog(this);
 		if (retval == JFileChooser.APPROVE_OPTION) {
 			File targetFile = fileChooser.getSelectedFile();
@@ -495,13 +940,31 @@ public class MainFrame extends JFrame implements ModelListener {
 					return; // overwrite not allowed by user
 				}
 			}
-			launchSaveTask(Model.getInstance().getPdf(), targetFile);
+			launchSaveTask(Model.getInstance().getPdf(), targetFile, targetPageIndex);
 		}
 	}
 
-	private void launchSaveTask(PdfFile pdfFile, File targetFile) {
-		PageRectsMap pageRectsMap = Model.getInstance().getPageRectsMap();
-		new TaskPdfSave(pdfFile, targetFile, pageRectsMap , defaultPdfPanel.getWidth(), defaultPdfPanel.getHeight(), this).execute();
+	private void launchSaveTask(PdfFile pdfFile, File targetFile, int targetPageIndex) {//MOD russa: additional 3rd argument -> IF != -1, the only this page is saved
+		
+//		PageRectsMap pageRectsMap = Model.getInstance().getPageRectsMap();
+		
+		PageRectsMap pageRectsMap;
+		
+		//MOD russa:
+		if(targetPageIndex != -1){
+			pageRectsMap = new PageRectsMap();
+			Rect selRect = this.uiHandler.getSelectedRect();
+			ArrayList<Rectangle> list = new ArrayList<Rectangle>(1);
+			list.add(selRect.getRectangleBound());
+			pageRectsMap.putRects(targetPageIndex + 1, list);
+		} else {
+			targetPageIndex = -1;
+			pageRectsMap = Model.getInstance().getPageRectsMap();
+		}
+		
+		
+		
+		new TaskPdfSave(pdfFile, targetFile, pageRectsMap, targetPageIndex, defaultPdfPanel.getWidth(), defaultPdfPanel.getHeight(), this).execute();
 
 	}
 
@@ -561,6 +1024,8 @@ public class MainFrame extends JFrame implements ModelListener {
 					}
 				}
 			});
+			
+			selectedRectDependendComponents.add(buttonDeleteRect);
 		}
 		return buttonDeleteRect;
 	}
@@ -645,6 +1110,8 @@ public class MainFrame extends JFrame implements ModelListener {
 					}
 				}
 			});
+			
+			selectedRectDependendComponents.add(buttonSplitHorizontal);
 		}
 		return buttonSplitHorizontal;
 	}
@@ -662,6 +1129,8 @@ public class MainFrame extends JFrame implements ModelListener {
 					}
 				}
 			});
+			
+			selectedRectDependendComponents.add(buttonSplitVertical);
 		}
 		return buttonSplitVertical;
 	}
@@ -694,6 +1163,8 @@ public class MainFrame extends JFrame implements ModelListener {
 		updateOpenFileDependents();
 		getPageGroupListCellRenderer().setPageSize(pdfFile.getNormalizedPdfWidth(), pdfFile.getNormalizedPdfHeight());
 		getPageGroupList().invalidate(); // to recalculate size etc
+
+		uiHandler.notifySelectionChanged(null, null);//MOD russa: "initialize" UI controls with empty selection
 	}
 
 	@Override
@@ -805,6 +1276,14 @@ public class MainFrame extends JFrame implements ModelListener {
 
 	class UIHandlerLisnterForFrame implements UIHandlerListener {
 
+		
+		private RectChangeListener updateSelectedRectListener = new RectChangeListener() {//MOD russa
+			@Override
+			public void rectUpdated(Rect updatedRect, Rectangle repaintArea) {
+				updateRectEditor(updatedRect);
+			}
+		};
+		
 		@Override
 		public void editingModeChanged(int newMode) {
 			debug("Editing mode : " + newMode);
@@ -830,6 +1309,23 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 		
 		@Override
+		public void selectionChanged(Rect newSelection, Rect oldSelection) {//MOD russa
+			
+			//MOD russa: enable/disable buttons based on whether or not there is a current selection
+			updateRectSelectedDependents(newSelection != null);
+			
+			if(oldSelection != null){
+				oldSelection.removeListener(updateSelectedRectListener);
+			}
+			if(newSelection != null){
+				newSelection.addListener(updateSelectedRectListener);
+			}
+			updateRectEditor(newSelection);
+			
+			
+		}
+		
+		@Override
 		public void pageGroupSelected(PageGroup pageGroup) {
 			// update combo page list
 			int pageCount = pageGroup.getPageCount();
@@ -837,7 +1333,12 @@ public class MainFrame extends JFrame implements ModelListener {
 			combo.removeAllItems();
 			if (pageCount > 1) {
 				combo.addItem("Stacked view");
+				combo.setEnabled(true);//re-enable combo-box
+			} else {
+				//if combo-box has only one item/page, disable it
+				combo.setEnabled(false);
 			}
+			
 			for (int i = 0; i < pageCount; i++) {
 				combo.addItem(String.valueOf(pageGroup.getPageNumberAt(i)));
 			}
@@ -894,7 +1395,9 @@ public class MainFrame extends JFrame implements ModelListener {
 			menuFile = new JMenu("File");
 			menuFile.setMnemonic(KeyEvent.VK_F);
 			menuFile.add(getMenuFileOpen());
+			menuFile.add(getMenuFileOpenExtended());//MOD russa: additional open option (which was previously the normal open option)
 			menuFile.add(getMenuSave());
+			menuFile.add(getMenuSaveCurrent());//MOD russa: additional save option
 			menuFile.addSeparator();
 			menuFile.add(createMenuDonate());
 		}
@@ -914,11 +1417,31 @@ public class MainFrame extends JFrame implements ModelListener {
 
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
-					showFileOpenDialog();
+					showFileOpenDialog(false);
 				}
 			});
 		}
 		return menuFileOpen;
+	}
+	
+	/**
+	 * This method initializes menuFileOpen
+	 * 
+	 * @return javax.swing.JMenuItem
+	 */
+	private JMenuItem getMenuFileOpenExtended() {
+		if (menuFileOpenExtended == null) {
+			menuFileOpenExtended = new JMenuItem("Open (Extended)", KeyEvent.VK_O);
+			menuFileOpenExtended.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK | ActionEvent.SHIFT_MASK));
+			menuFileOpenExtended.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					showFileOpenDialog(true);
+				}
+			});
+		}
+		return menuFileOpenExtended;
 	}
 
 	/**
@@ -939,6 +1462,30 @@ public class MainFrame extends JFrame implements ModelListener {
 			});
 		}
 		return menuSave;
+	}
+	
+	/**
+	 * MOD russa: additional save option for saving only current selection
+	 * This method initializes menuSaveCurrent
+	 * 
+	 * @return javax.swing.JMenuItem
+	 */
+	private JMenuItem getMenuSaveCurrent() {
+		if (menuSaveCurrent == null) {
+			menuSaveCurrent = new JMenuItem("Crop & Save Current Selection", KeyEvent.VK_S);
+			menuSaveCurrent.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK | ActionEvent.SHIFT_MASK));
+			menuSaveCurrent.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					saveFile(true);
+				}
+			});
+			
+			selectedRectDependendComponents.add(menuSaveCurrent);
+			openFileDependendComponents.add(menuSaveCurrent);
+		}
+		return menuSaveCurrent;
 	}
 	
 	/**
@@ -1102,7 +1649,9 @@ public class MainFrame extends JFrame implements ModelListener {
 			menuAbout.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					new AboutView(MainFrame.this).setVisible(true);
+					AboutView about = new AboutView(MainFrame.this);
+					about.setLocationRelativeTo(MainFrame.this);
+					about.setVisible(true);
 				}
 			});
 		}

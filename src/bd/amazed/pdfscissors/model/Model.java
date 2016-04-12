@@ -1,6 +1,5 @@
 package bd.amazed.pdfscissors.model;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -15,6 +14,10 @@ public class Model {
 	public static final String PROPERTY_LAST_FILE = "lastFile";
 	
 	public static final String PROPERTY_LAST_STACK_TYPE= "lastStackType";
+	
+
+	public static final String PROPERTY_DEFAULT_STACK_TYPE = "defaultStackType";//MOD russa
+	public static final String PROPERTY_DEFAULT_CREATE_STACKED_VIEW = "createStackedView";//MOD russa
 	
 	private static Model instance;
 

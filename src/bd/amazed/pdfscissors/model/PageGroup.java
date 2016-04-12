@@ -1,6 +1,8 @@
 package bd.amazed.pdfscissors.model;
 
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Vector;
@@ -21,6 +23,7 @@ public class PageGroup {
 	private ArrayList<Rect> rects = new ArrayList<Rect>();
 	private String name;
 	private BufferedImage stackImage;
+	private BufferedImage resizedStackImage;//MOD russa
 
 	public PageGroup(String name) {
 		this.name = name;
@@ -92,10 +95,24 @@ public class PageGroup {
 		return pageGroups;
 	}
 	
-	
-	
 	public BufferedImage getStackImage() {
 		return stackImage;
+	}
+	
+	public BufferedImage getStackImage(int width, int height) {
+		if(width == stackImage.getWidth() && height == stackImage.getHeight())
+			return stackImage;
+		
+		if(resizedStackImage == null || width != resizedStackImage.getWidth() || height != resizedStackImage.getHeight()){
+			
+			resizedStackImage = new BufferedImage(width, height, stackImage.getType());
+		    Graphics2D g = resizedStackImage.createGraphics();
+		    g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+		    g.drawImage(stackImage, 0, 0, width, height, 0, 0, stackImage.getWidth(), stackImage.getHeight(), null);
+		    g.dispose();
+			
+		}
+		return resizedStackImage;
 	}
 
 	public void setStackImage(BufferedImage stackImage) {
