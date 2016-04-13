@@ -329,17 +329,26 @@ public class OpenDialog extends JDialog {
 	 * 			if TRUE the default settings for the extended options are used 
 	 */
 	private void doLoadFile(boolean isUseDefaultOptions){
+		
 		if (file == null) {
 			JOptionPane.showMessageDialog(OpenDialog.this, "Select a pdf file first");
 			return;
 		}
-		int type = Integer.valueOf(stackGroupTypeChoices.getSelection().getActionCommand());
-		Model.getInstance().getProperties().setProperty(Model.PROPERTY_LAST_STACK_TYPE, stackGroupTypeChoices.getSelection().getActionCommand());
+		
+		//get opening settings from current GUI state
+		String selectedStackGroupType = stackGroupTypeChoices.getSelection().getActionCommand();
+		boolean isCreateStackedView = chckbxCreateStackedView.isSelected();
+
+		//remember current opening settings:
+		Model.getInstance().getProperties().setProperty(Model.PROPERTY_LAST_STACK_TYPE, selectedStackGroupType);
+		Model.getInstance().getProperties().setProperty(Model.PROPERTY_DEFAULT_CREATE_STACKED_VIEW, Boolean.toString(isCreateStackedView));
+		
 		OpenDialog.this.dispose();
 		
-		boolean isCreateStackedView = chckbxCreateStackedView.isSelected();
+		int type = Integer.valueOf(selectedStackGroupType);
 		
-		if(isUseDefaultOptions){//MOD russa
+		//if opening with default options was requested:
+		if(isUseDefaultOptions){
 			type = defaultOpenOptionStackType;
 			isCreateStackedView = defaultOpenOptionAddStackedView;
 		}
