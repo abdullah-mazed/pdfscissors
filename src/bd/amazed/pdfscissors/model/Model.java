@@ -14,10 +14,12 @@ public class Model {
 	public static final String PROPERTY_LAST_FILE = "lastFile";
 	
 	public static final String PROPERTY_LAST_STACK_TYPE= "lastStackType";
+	public static final String PROPERTY_LAST_CREATE_STACKED_VIEW = "lastCreateStackedView";
+	public static final String PROPERTY_LAST_SHOW_ADVANCED_OPTIONS = "lastShowAdvancedOpenOptions";
 	
-
-	public static final String PROPERTY_DEFAULT_STACK_TYPE = "defaultStackType";//MOD russa
-	public static final String PROPERTY_DEFAULT_CREATE_STACKED_VIEW = "createStackedView";//MOD russa
+	public static final String PROPERTY_DEFAULT_STACK_TYPE = "defaultStackType";
+	public static final String PROPERTY_DEFAULT_CREATE_STACKED_VIEW = "defaultCreateStackedView";
+	public static final String PROPERTY_DEFAULT_SHOW_ADVANCED_OPTIONS = "defaultShowAdvancedOpenOptions";
 	
 	private static Model instance;
 

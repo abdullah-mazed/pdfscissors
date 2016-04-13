@@ -437,8 +437,8 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JButton getButtonOpenQuick() {
 		if (buttonOpenExtended == null) {
 			buttonOpenExtended = new JButton("Quick Open"); // a string literal is here only for eclipse visual editor.
-			String imageFile = "/openExtended.png";
-			String text = "Open a PDF file with previously used settings";
+			String imageFile = "/openQuick.png";
+			String text = "Quick Open a PDF file";
 			setButton(buttonOpenExtended, imageFile, text, false);
 			buttonOpenExtended.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
@@ -467,15 +467,16 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 	}
 
-	public void showFileOpenDialog(OpenType openType) {//MOD russa: added boolean argument
+	public void showFileOpenDialog(OpenType openType) {
 		OpenDialog openDialog = new OpenDialog();
 		openDialog.seMainFrame(this);
 		openDialog.setModal(true);
-		openDialog.setLocationRelativeTo(this);//MOD russa
+		openDialog.setLocationRelativeTo(this);
 		
 		if(OpenType.QUICK.equals(openType)){
-			openDialog.showFileChooserDialog(true, true);
-		} else {//DEFAULT: use extended file-open options:
+			//open file-chooser directly (and show open-options in accessory panel:
+			openDialog.showFileChooserDialog(true, true, false);
+		} else {//DEFAULT: open extra open-options options dialog first:
 			openDialog.setVisible(true);
 		}
 		
@@ -652,9 +653,9 @@ public class MainFrame extends JFrame implements ModelListener {
 		if (toolBar == null) {
 			toolBar = new JToolBar();
 			toolBar.add(getButtonOpenDefault());
-			toolBar.add(getButtonOpenQuick());//MOD russa
+//			toolBar.add(getButtonOpenQuick());//MOD russa: disabled
 			toolBar.add(getButtonSave());
-			toolBar.add(getButtonSaveCurrent());//MOD russa
+			toolBar.add(getButtonSaveCurrent());
 			toolBar.add(getButtonDraw());
 			toolBar.add(getButtonSelect());
 			toolBar.add(getButtonDeleteRect());
