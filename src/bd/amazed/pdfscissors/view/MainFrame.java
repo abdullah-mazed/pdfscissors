@@ -140,6 +140,11 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JFormattedTextField tfEditWidth = null;
 	private JFormattedTextField tfEditHeight = null;
 	
+	public static enum OpenType {
+		EXTENDED, QUICK
+		
+	};
+	
 
 	/**
 	 * This is the default constructor
@@ -408,15 +413,15 @@ public class MainFrame extends JFrame implements ModelListener {
 	 * 
 	 * @return javax.swing.JButton
 	 */
-	private JButton getJButton() {
+	private JButton getButtonOpenDefault() {
 		if (jButton == null) {
 			jButton = new JButton("Open"); // a string literal is here only for eclipse visual editor.
 			String imageFile = "/open.png";
-			String text = "Open a pdf file";
+			String text = "Open a PDF file";
 			setButton(jButton, imageFile, text, false);
 			jButton.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
-					showFileOpenDialog(false);
+					showFileOpenDialog(OpenType.EXTENDED);
 				}
 
 			});
@@ -429,15 +434,15 @@ public class MainFrame extends JFrame implements ModelListener {
 	 * 
 	 * @return javax.swing.JButton
 	 */
-	private JButton getButtonOpenExtended() {
+	private JButton getButtonOpenQuick() {
 		if (buttonOpenExtended == null) {
-			buttonOpenExtended = new JButton("Open (Extended)"); // a string literal is here only for eclipse visual editor.
+			buttonOpenExtended = new JButton("Quick Open"); // a string literal is here only for eclipse visual editor.
 			String imageFile = "/openExtended.png";
-			String text = "Open a PDF file with extenden options";
+			String text = "Open a PDF file with previously used settings";
 			setButton(buttonOpenExtended, imageFile, text, false);
 			buttonOpenExtended.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
-					showFileOpenDialog(true);
+					showFileOpenDialog(OpenType.QUICK);
 				}
 
 			});
@@ -462,16 +467,16 @@ public class MainFrame extends JFrame implements ModelListener {
 		}
 	}
 
-	public void showFileOpenDialog(boolean isExtendedOptions) {//MOD russa: added boolean argument
+	public void showFileOpenDialog(OpenType openType) {//MOD russa: added boolean argument
 		OpenDialog openDialog = new OpenDialog();
 		openDialog.seMainFrame(this);
 		openDialog.setModal(true);
 		openDialog.setLocationRelativeTo(this);//MOD russa
 		
-		if(isExtendedOptions){
-			openDialog.setVisible(true);
-		} else {
+		if(OpenType.QUICK.equals(openType)){
 			openDialog.showFileChooserDialog(true, true);
+		} else {//DEFAULT: use extended file-open options:
+			openDialog.setVisible(true);
 		}
 		
 	}
@@ -646,8 +651,8 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JToolBar getToolBar() {
 		if (toolBar == null) {
 			toolBar = new JToolBar();
-			toolBar.add(getJButton());
-			toolBar.add(getButtonOpenExtended());//MOD russa
+			toolBar.add(getButtonOpenDefault());
+			toolBar.add(getButtonOpenQuick());//MOD russa
 			toolBar.add(getButtonSave());
 			toolBar.add(getButtonSaveCurrent());//MOD russa
 			toolBar.add(getButtonDraw());
@@ -1411,13 +1416,13 @@ public class MainFrame extends JFrame implements ModelListener {
 	 */
 	private JMenuItem getMenuFileOpen() {
 		if (menuFileOpen == null) {
-			menuFileOpen = new JMenuItem("Open", KeyEvent.VK_O);
+			menuFileOpen = new JMenuItem("Open ...", KeyEvent.VK_O);
 			menuFileOpen.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
 			menuFileOpen.addActionListener(new ActionListener() {
 
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
-					showFileOpenDialog(false);
+					showFileOpenDialog(OpenType.EXTENDED);
 				}
 			});
 		}
@@ -1431,13 +1436,13 @@ public class MainFrame extends JFrame implements ModelListener {
 	 */
 	private JMenuItem getMenuFileOpenExtended() {
 		if (menuFileOpenExtended == null) {
-			menuFileOpenExtended = new JMenuItem("Open (Extended)", KeyEvent.VK_O);
+			menuFileOpenExtended = new JMenuItem("Quick Open ...", KeyEvent.VK_O);
 			menuFileOpenExtended.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK | ActionEvent.SHIFT_MASK));
 			menuFileOpenExtended.addActionListener(new ActionListener() {
 
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
-					showFileOpenDialog(true);
+					showFileOpenDialog(OpenType.QUICK);
 				}
 			});
 		}
