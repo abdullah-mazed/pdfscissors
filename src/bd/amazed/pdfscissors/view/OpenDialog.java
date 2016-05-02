@@ -40,16 +40,20 @@ public class OpenDialog extends JDialog {
 	protected File file;
 	private Vector<Component> advancedOptions;
 	
-	private ButtonGroup stackGroupTypeChoices;//MOD russa: refactored
-	private JCheckBox chckbxCreateStackedView;//MOD russa: refactored
-	private JButton btnBrowse;//MOD russa: refactored
+	private ButtonGroup stackGroupTypeChoices;
+	private JCheckBox chckbxCreateStackedView;
+	private JButton btnBrowse;
+	private JButton btnShowAdvancedOptions;
 	
 	public static final int DEFAULT_OPEN_OPTION_STACKED_TYPE = PageGroup.GROUP_TYPE_INDIVIDUAL;//MOD russa: default opening option (CONSTANT)
 	public static final boolean DEFAULT_OPEN_OPTION_ADD_STACKED_VIEW_MODE = true;//MOD russa: default opening option (CONSTANT)
+	public static final boolean DEFAULT_OPEN_OPTION_SHOW_ADVANCED = false;//MOD russa: default opening option (CONSTANT)
 	private int defaultOpenOptionStackType;//MOD russa: default opening option
 	private boolean defaultOpenOptionAddStackedView;//MOD russa: default opening option
+	private boolean defaultOpenOptionShowAdvanced;//MOD russa: default opening option
 	
-
+	private final static String LABEL_SHOW_ADVANCED_OPTIONS = "Show advanced options";
+	private final static String LABEL_HIDE_ADVANCED_OPTIONS = "Hide advanced options";
 //	/**
 //	 * Launch the application.
 //	 */
@@ -71,6 +75,7 @@ public class OpenDialog extends JDialog {
 		//MOD russa: set default options
 		defaultOpenOptionStackType = getPageGroupTypeSetting();
 		defaultOpenOptionAddStackedView = getStackedViewSetting();
+		defaultOpenOptionShowAdvanced = getShowAdvancedSetting();
 				
 		advancedOptions = new Vector<Component>();
 		setTitle("Open PDF");		
@@ -109,7 +114,8 @@ public class OpenDialog extends JDialog {
 		AbstractAction browseAction = new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				showFileChooserDialog(true, false);//false, false);//MOD russa: immediately load file
+				//open file-chooser without options-field & immediately load file upon confirmation
+				showFileChooserDialog(true, false, false);
 			}
 		};
 		
@@ -118,9 +124,12 @@ public class OpenDialog extends JDialog {
 		contentPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
 		        KeyStroke.getKeyStroke(KeyEvent.VK_O, KeyEvent.CTRL_MASK ), "Open"
 		);
-		
+
+		//get last setting for "stack type" (or default setting, if there is none)
+		String lastSelectionOption = Model.getInstance().getProperties().getProperty(
+				Model.PROPERTY_LAST_STACK_TYPE, Integer.toString(defaultOpenOptionStackType)
+		);
 		stackGroupTypeChoices = new ButtonGroup();
-		String lastSelectionOption = Model.getInstance().getProperties().getProperty(Model.PROPERTY_LAST_STACK_TYPE);
 		{
 			btnBrowse = new JButton("Open...");
 			btnBrowse.setMnemonic('O');
@@ -189,17 +198,22 @@ public class OpenDialog extends JDialog {
 			gbc_rdbtnAllPagesSeparately.gridy = 5;
 			contentPanel.add(rdbtnAllPagesSeparately, gbc_rdbtnAllPagesSeparately);
 		}
+		
+		//get last setting for "show advanced file-open options" (or default setting, if there is none)
+		boolean lastShowAdvancedOptions = Boolean.valueOf(Model.getInstance().getProperties().getProperty(
+				Model.PROPERTY_LAST_SHOW_ADVANCED_OPTIONS, Boolean.toString(defaultOpenOptionShowAdvanced)
+		));
+		
 		{
-			final String showText = "Show advanced options";
-			final String hideText = "Hide advanced options";
-			final JButton btnShowAdvancedOptions = new JButton(showText);
+			String advancedOptionsLabel = lastShowAdvancedOptions? LABEL_HIDE_ADVANCED_OPTIONS : LABEL_SHOW_ADVANCED_OPTIONS;
+			btnShowAdvancedOptions = new JButton(advancedOptionsLabel);
 			btnShowAdvancedOptions.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent arg0) {
-					boolean showNow = showText.equals(btnShowAdvancedOptions.getText());
+					boolean showNow = !isShowingAdvancedOptions();
 					if (showNow) {
-						btnShowAdvancedOptions.setText(hideText);
+						btnShowAdvancedOptions.setText(LABEL_HIDE_ADVANCED_OPTIONS);
 					} else {
-						btnShowAdvancedOptions.setText(showText);
+						btnShowAdvancedOptions.setText(LABEL_SHOW_ADVANCED_OPTIONS);
 					}
 					for (Component component : advancedOptions) {
 						component.setVisible(showNow);
@@ -213,16 +227,21 @@ public class OpenDialog extends JDialog {
 			gbc_btnShowAdvancedOptions.gridy = 7;
 			contentPanel.add(btnShowAdvancedOptions, gbc_btnShowAdvancedOptions);
 		}
+		
+		//get last setting for "add stacked view" (or default setting, if there is none)
+		boolean lastCreateStackedViewSetting = Boolean.valueOf(Model.getInstance().getProperties().getProperty(
+				Model.PROPERTY_LAST_CREATE_STACKED_VIEW, Boolean.toString(defaultOpenOptionAddStackedView)
+		));
 		chckbxCreateStackedView = new JCheckBox("Create stacked view that helps cropping");
 		{	
-			chckbxCreateStackedView.setSelected(true);
+			chckbxCreateStackedView.setSelected(lastCreateStackedViewSetting);
 			GridBagConstraints gbc_chckbxCreateStackedView = new GridBagConstraints();
 			gbc_chckbxCreateStackedView.anchor = GridBagConstraints.WEST;
 			gbc_chckbxCreateStackedView.insets = new Insets(0, 0, 0, 5);
 			gbc_chckbxCreateStackedView.gridx = 0;
 			gbc_chckbxCreateStackedView.gridy = 8;
 			advancedOptions.add(chckbxCreateStackedView);
-			chckbxCreateStackedView.setVisible(false);
+			chckbxCreateStackedView.setVisible(lastShowAdvancedOptions);
 			contentPanel.add(chckbxCreateStackedView, gbc_chckbxCreateStackedView);
 		}
 		
@@ -279,6 +298,12 @@ public class OpenDialog extends JDialog {
 	
 	}
 
+	/**
+	 * HELPER returns TRUE if the advanced file-open options are currently shown
+	 */
+	private boolean isShowingAdvancedOptions() {
+		return LABEL_HIDE_ADVANCED_OPTIONS.equals(btnShowAdvancedOptions.getText());
+	}
 
 	/**
 	 * MOD russa: getter for extended file open option "create stacked view"
@@ -291,6 +316,20 @@ public class OpenDialog extends JDialog {
 			return Boolean.valueOf(defaultCreateStackedView);
 		} catch(Exception e){
 			return DEFAULT_OPEN_OPTION_ADD_STACKED_VIEW_MODE;
+		}
+	}
+	
+	/**
+	 * MOD russa: getter for extended file open option "show advanced options"
+	 * 
+	 * Returns the setting from the properties or the default value.
+	 */
+	public static boolean getShowAdvancedSetting() {
+		String defaultShowAdvanced = Model.getInstance().getProperties().getProperty(Model.PROPERTY_DEFAULT_SHOW_ADVANCED_OPTIONS, Boolean.toString(DEFAULT_OPEN_OPTION_SHOW_ADVANCED));//MOD russa: set default stack-type, if it was set
+		try{
+			return Boolean.valueOf(defaultShowAdvanced);
+		} catch(Exception e){
+			return DEFAULT_OPEN_OPTION_SHOW_ADVANCED;
 		}
 	}
 	
@@ -329,17 +368,28 @@ public class OpenDialog extends JDialog {
 	 * 			if TRUE the default settings for the extended options are used 
 	 */
 	private void doLoadFile(boolean isUseDefaultOptions){
+		
 		if (file == null) {
 			JOptionPane.showMessageDialog(OpenDialog.this, "Select a pdf file first");
 			return;
 		}
-		int type = Integer.valueOf(stackGroupTypeChoices.getSelection().getActionCommand());
-		Model.getInstance().getProperties().setProperty(Model.PROPERTY_LAST_STACK_TYPE, stackGroupTypeChoices.getSelection().getActionCommand());
+		
+		//get opening settings from current GUI state
+		String selectedStackGroupType = stackGroupTypeChoices.getSelection().getActionCommand();
+		boolean isCreateStackedView = chckbxCreateStackedView.isSelected();
+		boolean isShowAdvancedOptions = isShowingAdvancedOptions();
+
+		//remember current opening settings:
+		Model.getInstance().getProperties().setProperty(Model.PROPERTY_LAST_STACK_TYPE, selectedStackGroupType);
+		Model.getInstance().getProperties().setProperty(Model.PROPERTY_LAST_CREATE_STACKED_VIEW, Boolean.toString(isCreateStackedView));
+		Model.getInstance().getProperties().setProperty(Model.PROPERTY_LAST_SHOW_ADVANCED_OPTIONS, Boolean.toString(isShowAdvancedOptions));
+				
 		OpenDialog.this.dispose();
 		
-		boolean isCreateStackedView = chckbxCreateStackedView.isSelected();
+		int type = Integer.valueOf(selectedStackGroupType);
 		
-		if(isUseDefaultOptions){//MOD russa
+		//if opening with default options was requested:
+		if(isUseDefaultOptions){
 			type = defaultOpenOptionStackType;
 			isCreateStackedView = defaultOpenOptionAddStackedView;
 		}
@@ -357,9 +407,9 @@ public class OpenDialog extends JDialog {
 	 * @param isCloseMainDialog
 	 * 			if TRUE the selected file is loaded immediately (if no file was selected, only the internal file-selection is updated/cleared)
 	 * @param isUseDefaultOptions
-	 * 			if TRUE the default settings for the extended options are used 
+	 * 			if TRUE the default settings for the extended options are used
 	 */
-	public void showFileChooserDialog(boolean isCloseMainDialog, boolean isUseDefaultOptions) {//MOD russa: added boolean argument -> if TRUE, loading the file is immediately triggered
+	public void showFileChooserDialog(boolean isCloseMainDialog, boolean isShowOptions, boolean isUseDefaultOptions) {//MOD russa: added boolean argument -> if TRUE, loading the file is immediately triggered
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileFilter(mainFrame.createFileFilter());
 		String lastFile = Model.getInstance().getProperties().getProperty(Model.PROPERTY_LAST_FILE);
@@ -367,22 +417,31 @@ public class OpenDialog extends JDialog {
 			System.out.println("Last opened directory rememberred: " + lastFile);
 			fileChooser.setCurrentDirectory(new File(lastFile));
 		}
+		
+		//TEST show options in file-chooser itself
+		if(isShowOptions){//MOD russa
+			
+			//reset size of contentPanel so that it takes up "minimal" space in file-chooser:
+			((GridBagLayout)contentPanel.getLayout()).rowHeights = null;
+			((GridBagLayout)contentPanel.getLayout()).columnWidths = null;
+			
+			//TODO manually set contentPanel.setPreferredSize() to max. width of its components? (-> extended options may be hidden when first shown)
+			
+			fileChooser.setAccessory(contentPanel);
+		}
 
 		int retval = fileChooser.showOpenDialog(mainFrame);
 		if (retval == JFileChooser.APPROVE_OPTION) {
 			file = fileChooser.getSelectedFile();
 			if (file != null) {
+				
 				Model.getInstance().getProperties().setProperty(Model.PROPERTY_LAST_FILE, file.getParentFile().getAbsolutePath());
-//				filePath.setText(file.getAbsolutePath());//MOD russa: immediately load file
 				
 				if(isCloseMainDialog){//MOD russa
 					doLoadFile(isUseDefaultOptions);
 				}
 				
-			} 
-//			else {//MOD russa: immediately load file
-//				filePath.setText("");
-//			}
+			}
 		}
 		
 	}

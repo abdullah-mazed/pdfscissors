@@ -18,6 +18,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 import bd.amazed.pdfscissors.model.Model;
 import bd.amazed.pdfscissors.view.MainFrame;
+import bd.amazed.pdfscissors.view.MainFrame.OpenType;
 import bd.amazed.pdfscissors.view.OpenDialog;
 
 public class PdfscissorsMain {
@@ -93,12 +94,12 @@ public class PdfscissorsMain {
 						else {
 							//open file-dialog with extend options
 							Model.getInstance().getProperties().setProperty(Model.PROPERTY_LAST_FILE, path.getAbsolutePath());
-							main.showFileOpenDialog(true);
+							main.showFileOpenDialog(OpenType.EXTENDED);
 						}
 					}
 					else if(!isExtOpenMode){
 						//open file-dialog with extend options
-						main.showFileOpenDialog(true);
+						main.showFileOpenDialog(OpenType.EXTENDED);
 					}
 				}
 			}
