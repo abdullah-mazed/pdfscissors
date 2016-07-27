@@ -62,6 +62,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 
+import bd.amazed.pdfscissors.model.CropRect;
 import bd.amazed.pdfscissors.model.Model;
 import bd.amazed.pdfscissors.model.ModelListener;
 import bd.amazed.pdfscissors.model.PageGroup;
@@ -945,26 +946,8 @@ public class MainFrame extends JFrame implements ModelListener {
 	}
 
 	private void launchSaveTask(PdfFile pdfFile, File targetFile, int targetPageIndex) {//MOD russa: additional 3rd argument -> IF != -1, the only this page is saved
-		
-//		PageRectsMap pageRectsMap = Model.getInstance().getPageRectsMap();
-		
-		PageRectsMap pageRectsMap;
-		
-		//MOD russa:
-		if(targetPageIndex != -1){
-			pageRectsMap = new PageRectsMap();
-			Rect selRect = this.uiHandler.getSelectedRect();
-			ArrayList<Rectangle> list = new ArrayList<Rectangle>(1);
-			list.add(selRect.getRectangleBound());
-			pageRectsMap.putRects(targetPageIndex + 1, list);
-		} else {
-			targetPageIndex = -1;
-			pageRectsMap = Model.getInstance().getPageRectsMap();
-		}
-		
-		
-		
-		new TaskPdfSave(pdfFile, targetFile, pageRectsMap, targetPageIndex, defaultPdfPanel.getWidth(), defaultPdfPanel.getHeight(), this).execute();
+		ArrayList<CropRect> cropRects = Model.getInstance().getCropRects(targetPageIndex, this.uiHandler.rectsInsertionOrder);
+		new TaskPdfSave(pdfFile, targetFile, cropRects, defaultPdfPanel.getWidth(), defaultPdfPanel.getHeight(), this).execute();
 
 	}
 

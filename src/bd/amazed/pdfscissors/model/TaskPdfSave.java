@@ -4,6 +4,7 @@ import java.awt.Component;
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.JOptionPane;
@@ -14,38 +15,29 @@ public class TaskPdfSave extends SwingWorker<Boolean, Void> {
 
 	private PdfFile pdfFile;
 	private File targetFile;
-	PageRectsMap pageRectsMap;
+	private ArrayList<CropRect> cropRects;
 	private int viewWidth;
 	private int viewHeight;
 	private Component owner;
-	
-	private int targetPageIndex;//MOD russa: if != -1, only current selection (on the page) is saved
 
 	ProgressMonitor progressMonitor;
 
-	public TaskPdfSave(PdfFile pdfFile, File targetFile, PageRectsMap pageRectsMap, int viewWidth, int viewHeight,
-			Component owner) {
-		
-		this(pdfFile, targetFile, pageRectsMap, -1, //MOD russa: additional arg pageIndex: if -1 ignored, otherwise: only save this single page
-				viewWidth, viewHeight, owner);
-	}
 	
-	public TaskPdfSave(PdfFile pdfFile, File targetFile, PageRectsMap pageRectsMap, int pageIndex, //MOD russa: additional arg pageIndex: if -1 ignored, otherwise: only save this single page
+	public TaskPdfSave(PdfFile pdfFile, File targetFile, ArrayList<CropRect> cropRects,
 			int viewWidth, int viewHeight, Component owner) {
 		this.pdfFile = pdfFile;
 		this.targetFile = targetFile;
-		this.pageRectsMap = pageRectsMap;
+		this.cropRects = cropRects;
 		this.owner = owner;
 		this.viewWidth = viewWidth;
 		this.viewHeight = viewHeight;
-		this.targetPageIndex = pageIndex;
 		progressMonitor = new ProgressMonitor(owner, "Saving " + targetFile.getName() + "...", "", 0, 100);
 	}
 
 	@Override
 	protected Boolean doInBackground() throws Exception {
 		debug("Cropping to " + targetFile + "...");
-		PdfCropper.cropPdf(pdfFile, targetFile, pageRectsMap, targetPageIndex, viewWidth, viewHeight, progressMonitor);
+		PdfCropper.cropPdf(pdfFile, targetFile, cropRects, viewWidth, viewHeight, progressMonitor);
 		debug("Cropping success : " + targetFile);
 		return true;
 	}

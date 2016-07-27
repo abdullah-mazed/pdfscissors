@@ -16,11 +16,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import javax.swing.ProgressMonitor;
 
 import org.jpedal.PdfDecoder;
 import org.jpedal.exception.PdfException;
+
+import bd.amazed.pdfscissors.view.Rect;
 
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
@@ -211,13 +214,8 @@ public class PdfCropper {
 		}
 		return maxBoundingBox;
 	}
-
-	public static void cropPdf(PdfFile pdfFile, File targetFile, PageRectsMap pageRectsMap, int viewWidth,
-			int viewHeight, ProgressMonitor progressMonitor) throws IOException, DocumentException {
-		cropPdf(pdfFile, targetFile, pageRectsMap, -1, viewWidth, viewHeight, progressMonitor);
-	}
 	
-	public static void cropPdf(PdfFile pdfFile, File targetFile, PageRectsMap pageRectsMap, int pageIndex,//MOD russa: additional arg pageIndex: if -1 ignored, otherwise: only save this single page
+	public static void cropPdf(PdfFile pdfFile, File targetFile, ArrayList<CropRect> cropRects,
 			int viewWidth, int viewHeight, ProgressMonitor progressMonitor) throws IOException, DocumentException {
 
 		File originalFile = pdfFile.getOriginalFile();
@@ -263,55 +261,19 @@ public class PdfCropper {
 
 			PdfImportedPage page;
 			
-			int newPageCount = 0;
+			int newPageCount = cropRects.size();
 			
-			int indexStart = 0;
-			int indexStartOriginal = 1;
-			//MOD russa: if pageCount > -1, only copy this single page			
-			if(pageIndex > -1){
-				//adjust start-indices / end-conditions, so that only the one page gets saved
-				indexStart = pageIndex;
-				indexStartOriginal = pageIndex + 1;
-				originalPageCount = indexStart + 1;
-			}
-			
-			for (int i = indexStart; i < originalPageCount;) {
-				++i;
-				ArrayList<java.awt.Rectangle> cropRects = pageRectsMap.getRects(i);
-				int cropCellCount = 0;
-				if (cropRects != null) {
-					cropCellCount = cropRects.size();
-				}
-				
-				if (cropCellCount == 0) {
-					cropCellCount = 1;//we will assume there is one crop cell that covers the whole page
-				}
-				newPageCount += cropCellCount;
-				for (int iCell = 0; iCell < cropCellCount; iCell++) {
-					progressMonitor.setNote("Writing page " + ((i - 1) * cropCellCount + iCell) + " of " + newPageCount);
-					progressMonitor.setProgress(i * 100 / originalPageCount);
 
-//					java.awt.Rectangle awtRect = cropRectsInIPDFCoords.get(iCell);
-					// Rectangle itextRect = new Rectangle(awtRect.x , awtRect.y +
-					// awtRect.height, awtRect.x + awtRect.width, awtRect.y);
-					// Rectangle itextRect = new Rectangle(100,50);
-					// writer.setBoxSize("crop", itextRect);
-					// writer.setBoxSize("trim", itextRect);
-					// writer.setBoxSize("art", itextRect);
-					// writer.setBoxSize("bleed", itextRect);
-					page = writer.getImportedPage(reader, i);
-					// writer.setPageSize(itextRect);
-					writer.addPage(page);
-				}
+			
+			for (int i = 0; i < cropRects.size(); i++) {
+				CropRect cropRect = cropRects.get(i);
+				progressMonitor.setNote("Writing page " + (i + 1) + " of " + newPageCount);
+				progressMonitor.setProgress(i * 100 / cropRects.size());
+				page = writer.getImportedPage(reader, cropRect.pageNumber);
+				writer.addPage(page);	
 			}
-			// PRAcroForm form = reader.getAcroForm();
-			// if (form != null) {
-			// writer.copyAcroForm(reader);
-			// }
-			// f++;
-			// if (!master.isEmpty()) {
-			// writer.setOutlines(master);
-			// }
+			
+			
 			document.close();
 			document = null;
 			reader = new PdfReader(tempFile.getAbsolutePath());
@@ -319,37 +281,35 @@ public class PdfCropper {
 			stamper = new PdfStamper(reader, new FileOutputStream(targetFile));
 			int pageCount = reader.getNumberOfPages();
 			newPageCount = 0;
-			for (int iOriginalPage = indexStartOriginal; iOriginalPage <= originalPageCount; iOriginalPage++) {
-				ArrayList<java.awt.Rectangle> cropRectsInIPDFCoords = pageRectsMap.getConvertedRectsForCropping(iOriginalPage, viewWidth, viewHeight, pdfWidth, pdfHeight);
-				int cropCellCount = 0;
-				if (cropRectsInIPDFCoords != null) {
-					cropCellCount = cropRectsInIPDFCoords.size();
-				}
-				
-				if (cropCellCount == 0) {
+			for (CropRect cropRect : cropRects) {
+				java.awt.Rectangle cropRectsInIPDFCoords = getConvertedRectForCropping(cropRect.rectangle, viewWidth, viewHeight, pdfWidth,pdfHeight);
+
+				if (cropRectsInIPDFCoords == null) {
 					newPageCount++; // we will still add one full page
 					System.out.println("Cropping page " + newPageCount + " ... full page size");
 				} else {
-					for (int i = 0; i < cropCellCount;) {
-						++i;
-						newPageCount++;
-						// http://stackoverflow.com/questions/4089757/how-do-i-resize-an-existing-pdf-with-coldfusion-itext
-						progressMonitor.setNote("Cropping page " + newPageCount + " of " + pageCount);
-						progressMonitor.setProgress(newPageCount * 100 / pageCount);
-						if (cropRectsInIPDFCoords != null) {
-							PdfDictionary pdfDictionary = reader.getPageN(newPageCount);
-							PdfArray cropCell = new PdfArray();
-							java.awt.Rectangle awtRect = cropRectsInIPDFCoords.get(i - 1);
-							System.out.println("Cropping page " + newPageCount + " with " + awtRect);
-							cropCell.add(new PdfNumber(awtRect.x));// lower left x
-							cropCell.add(new PdfNumber(awtRect.y));// lower left y
-							cropCell.add(new PdfNumber(awtRect.x + awtRect.width)); // up right x
-							cropCell.add(new PdfNumber(awtRect.y + awtRect.height));// up righty
-							pdfDictionary.put(PdfName.CROPBOX, cropCell);
-							pdfDictionary.put(PdfName.MEDIABOX, cropCell);
-							pdfDictionary.put(PdfName.TRIMBOX, cropCell);
-							pdfDictionary.put(PdfName.BLEEDBOX, cropCell);
-						} 
+
+					newPageCount++;
+					// http://stackoverflow.com/questions/4089757/how-do-i-resize-an-existing-pdf-with-coldfusion-itext
+					progressMonitor.setNote("Cropping page " + newPageCount + " of " + pageCount);
+					progressMonitor.setProgress(newPageCount * 100 / pageCount);
+					if (cropRectsInIPDFCoords != null) {
+						PdfDictionary pdfDictionary = reader
+								.getPageN(newPageCount);
+						PdfArray cropCell = new PdfArray();
+						java.awt.Rectangle awtRect = cropRectsInIPDFCoords;
+						System.out.println("Cropping page " + newPageCount + " with " + awtRect);
+						cropCell.add(new PdfNumber(awtRect.x));// lower left x
+						cropCell.add(new PdfNumber(awtRect.y));// lower left y
+						cropCell.add(new PdfNumber(awtRect.x + awtRect.width)); // up
+																				// right
+																				// x
+						cropCell.add(new PdfNumber(awtRect.y + awtRect.height));// up
+																				// righty
+						pdfDictionary.put(PdfName.CROPBOX, cropCell);
+						pdfDictionary.put(PdfName.MEDIABOX, cropCell);
+						pdfDictionary.put(PdfName.TRIMBOX, cropCell);
+						pdfDictionary.put(PdfName.BLEEDBOX, cropCell);
 					}
 				}
 			}
@@ -369,6 +329,28 @@ public class PdfCropper {
 				tempFile.delete();
 			}
 		}
+	}
+	
+	public static java.awt.Rectangle getConvertedRectForCropping(java.awt.Rectangle rect,int viewWidth, int viewHeight, float pdfWidth, float pdfHeight) {
+
+		if (rect == null) {
+			return null;
+		}
+		
+		double widthRatio = pdfWidth / viewWidth;
+		double heightRatio = pdfHeight / viewHeight;
+		if (widthRatio != heightRatio) {
+			System.err.println("WARNING>>> RATION NOT SAME ?! " + widthRatio + " " + heightRatio);
+		}
+		
+		java.awt.Rectangle covertedRect = new java.awt.Rectangle();
+		covertedRect.x = (int) (widthRatio * rect.x);
+		covertedRect.y = (int) (widthRatio * (viewHeight - rect.y - rect.height));
+		covertedRect.width = (int) (widthRatio * rect.width);
+		covertedRect.height = (int) (widthRatio * rect.height);
+			
+		return covertedRect;
+
 	}
 
 	public void cancel() {
@@ -421,3 +403,5 @@ public class PdfCropper {
 		System.out.println("TaskPdfOpen:" + string);
 	}
 }
+
+

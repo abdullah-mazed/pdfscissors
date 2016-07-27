@@ -22,10 +22,13 @@ public class UIHandler {
 	private int page;
 	private boolean showMergeMode;
 
+	protected ArrayList<Rect> rectsInsertionOrder;//rects in the order of user insertion, in any page group
+	
 	private Vector<UIHandlerListener> listeners;
 
 	public UIHandler() {
 		rects = new ArrayList<Rect>();
+		rectsInsertionOrder = new ArrayList<Rect>(); 
 		listeners = new Vector<UIHandlerListener>();
 		reset();
 	}
@@ -82,6 +85,13 @@ public class UIHandler {
 
 	public void addRect(Rect rect) {
 		rects.add(rect);
+		rectsInsertionOrder.add(rect);
+		notifyRectsStateChanged();
+	}
+	
+	public void addRect(int index, Rect rect) {
+		rects.add(index, rect);
+		rectsInsertionOrder.add(index, rect);
 		notifyRectsStateChanged();
 	}
 
@@ -111,8 +121,8 @@ public class UIHandler {
 
 			int indexSelected = rects.indexOf(selectedRect);
 			delete(selectedRect);
-			rects.add(indexSelected, rightRect);
-			rects.add(indexSelected, leftRect);
+			addRect(indexSelected, rightRect);
+			addRect(indexSelected, leftRect);
 			notifyRectsStateChanged();
 		}
 	}
@@ -134,8 +144,8 @@ public class UIHandler {
 
 			int indexSelected = rects.indexOf(selectedRect);
 			delete(selectedRect);
-			rects.add(indexSelected, downRect);
-			rects.add(indexSelected, upRect);
+			addRect(indexSelected, downRect);
+			addRect(indexSelected, upRect);
 			notifyRectsStateChanged();
 		}
 	}
@@ -146,6 +156,7 @@ public class UIHandler {
 			if (selectedRect == rect) {
 				selectedRect = null;
 			}
+			rectsInsertionOrder.remove(rect);
 			rect.fireEvent(null);
 			notifyRectsStateChanged();
 		}
@@ -165,6 +176,7 @@ public class UIHandler {
 			anyRect = rects.get(0);
 		}
 		rects.clear();
+		rectsInsertionOrder.clear();
 		if (anyRect != null) {
 			anyRect.fireEvent(null); // if canvas repaints whole area once, that
 			// will do.

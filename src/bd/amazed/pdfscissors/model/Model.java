@@ -1,9 +1,11 @@
 package bd.amazed.pdfscissors.model;
 
+import java.awt.Rectangle;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Vector;
 
@@ -141,6 +143,50 @@ public class Model {
 			}
 		}
 		return pageRectsMap;
+	}
+
+	/**
+	 * 
+	 * @param targetPageIndex if -1 use crop all page, otherwise crop only the given page
+	 * @param rectOrderList if non null, crop the pdf using the given order of rects
+	 * @return
+	 */
+	public ArrayList<CropRect> getCropRects(int targetPageIndex, ArrayList<Rect> rectOrderList) {
+		ArrayList<CropRect> cropRects = new ArrayList<CropRect>();
+		
+		int indexStart = 0;
+
+		int originalPageCount = pageGroups.size();
+		if(targetPageIndex > -1){
+			//adjust start-indices / end-conditions, so that only the one page gets saved
+			indexStart = targetPageIndex;
+			originalPageCount = indexStart + 1;
+		}
+		
+		PageGroup pageGroup = null;
+		Vector<Integer> pages = null;
+		for (int i = indexStart; i < originalPageCount; i++) {
+			pageGroup = pageGroups.elementAt(i);
+			pages = pageGroup.getPages();
+			for (int page = 0; page < pages.size(); page++) {
+				ArrayList<Rectangle> pageGroupRectangles = pageGroup.getRectangles();
+				if (pageGroupRectangles == null || pageGroupRectangles.size() == 0) {
+					CropRect cropRect = new CropRect();
+					cropRect.pageNumber = pages.get(page);
+					cropRect.rectangle = null;//keep original page crop
+					cropRects.add(cropRect);
+				} else {
+					for (Rectangle rectangle : pageGroupRectangles) {
+						CropRect cropRect = new CropRect();
+						cropRect.pageNumber = pages.get(page);
+						cropRect.rectangle = rectangle;
+						cropRects.add(cropRect);
+					}
+				}
+			}
+		}
+		
+		return cropRects;
 	}
 
 
