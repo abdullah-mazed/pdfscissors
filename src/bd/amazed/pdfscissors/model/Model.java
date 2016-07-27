@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Vector;
 
+import javax.management.RuntimeErrorException;
+
 import bd.amazed.pdfscissors.view.Rect;
 
 public class Model {
@@ -34,6 +36,8 @@ public class Model {
 	private Properties properties;
 	private String propertyFileLocation;
 
+	private int groupType;
+	
 	private Vector<PageGroup> pageGroups;
 	
 	private Model() {
@@ -154,39 +158,64 @@ public class Model {
 	public ArrayList<CropRect> getCropRects(int targetPageIndex, ArrayList<Rect> rectOrderList) {
 		ArrayList<CropRect> cropRects = new ArrayList<CropRect>();
 		
-		int indexStart = 0;
-
-		int originalPageCount = pageGroups.size();
-		if(targetPageIndex > -1){
-			//adjust start-indices / end-conditions, so that only the one page gets saved
-			indexStart = targetPageIndex;
-			originalPageCount = indexStart + 1;
-		}
-		
-		PageGroup pageGroup = null;
-		Vector<Integer> pages = null;
-		for (int i = indexStart; i < originalPageCount; i++) {
-			pageGroup = pageGroups.elementAt(i);
-			pages = pageGroup.getPages();
-			for (int page = 0; page < pages.size(); page++) {
-				ArrayList<Rectangle> pageGroupRectangles = pageGroup.getRectangles();
-				if (pageGroupRectangles == null || pageGroupRectangles.size() == 0) {
-					CropRect cropRect = new CropRect();
-					cropRect.pageNumber = pages.get(page);
-					cropRect.rectangle = null;//keep original page crop
-					cropRects.add(cropRect);
-				} else {
-					for (Rectangle rectangle : pageGroupRectangles) {
+		if (this.groupType != PageGroup.GROUP_TYPE_INDIVIDUAL) {
+			int indexStart = 0;
+	
+			int originalPageCount = pageGroups.size();
+			if(targetPageIndex > -1){
+				//adjust start-indices / end-conditions, so that only the one page gets saved
+				indexStart = targetPageIndex;
+				originalPageCount = indexStart + 1;
+			}
+			
+			PageGroup pageGroup = null;
+			Vector<Integer> pages = null;
+			for (int i = indexStart; i < originalPageCount; i++) {
+				pageGroup = pageGroups.elementAt(i);
+				pages = pageGroup.getPages();
+				for (int page = 0; page < pages.size(); page++) {
+					ArrayList<Rectangle> pageGroupRectangles = pageGroup.getRectangles();
+					if (pageGroupRectangles == null || pageGroupRectangles.size() == 0) {
 						CropRect cropRect = new CropRect();
 						cropRect.pageNumber = pages.get(page);
-						cropRect.rectangle = rectangle;
+						cropRect.rectangle = null;//keep original page crop
 						cropRects.add(cropRect);
+					} else {
+						for (Rectangle rectangle : pageGroupRectangles) {
+							CropRect cropRect = new CropRect();
+							cropRect.pageNumber = pages.get(page);
+							cropRect.rectangle = rectangle;
+							cropRects.add(cropRect);
+						}
 					}
 				}
 			}
+		} else {
+			//for each rect, find which page it is in and add to list
+			for (Rect rectInOrder : rectOrderList) {
+				int pageNumber = findPageNumber(rectInOrder);
+				if (pageNumber == -1) {
+					throw new RuntimeException("Cound not find ordered rect");
+				}
+				CropRect cropRect = new CropRect();
+				cropRect.pageNumber = pageNumber;
+				cropRect.rectangle = rectInOrder.getRectangleBound();
+				cropRects.add(cropRect);
+			}
 		}
-		
 		return cropRects;
+	}
+
+
+	private int findPageNumber(Rect rectToFind) {
+		for (PageGroup pageGroup : pageGroups) {
+			for (Rect rect : pageGroup.getRects()) {
+				if (rect == rectToFind) {
+					return pageGroup.getLastPage();
+				}
+			}
+		}
+		return -1;
 	}
 
 
@@ -260,5 +289,15 @@ public class Model {
 			getProperties().store(new FileOutputStream(getPropertyFileLocation()), null);
 		} catch (IOException e) {
 		}
+	}
+
+
+	public int getGroupType() {
+		return groupType;
+	}
+
+
+	public void setGroupType(int groupType) {
+		this.groupType = groupType;
 	}
 }

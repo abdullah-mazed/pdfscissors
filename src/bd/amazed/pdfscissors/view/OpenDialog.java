@@ -334,6 +334,7 @@ public class OpenDialog extends JDialog {
 			return;
 		}
 		int type = Integer.valueOf(stackGroupTypeChoices.getSelection().getActionCommand());
+		Model.getInstance().setGroupType(type);
 		Model.getInstance().getProperties().setProperty(Model.PROPERTY_LAST_STACK_TYPE, stackGroupTypeChoices.getSelection().getActionCommand());
 		OpenDialog.this.dispose();
 		
