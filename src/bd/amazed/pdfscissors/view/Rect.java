@@ -143,7 +143,7 @@ public class Rect implements Cloneable {
 			}
 
 			g.setFont(font);
-			g.drawString(String.valueOf(uiHandler.getIndexOf(this) + 1), bounds.x + 5, bounds.y + g.getFont().getSize() + 2);
+			g.drawString(uiHandler.getNameForRect(this), bounds.x + 5, bounds.y + g.getFont().getSize() + 2);
 		}
 
 		// draw dashed border

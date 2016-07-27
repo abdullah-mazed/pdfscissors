@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 
+import bd.amazed.pdfscissors.model.Model;
 import bd.amazed.pdfscissors.model.PageGroup;
 
 public class UIHandler {
@@ -294,5 +295,13 @@ public class UIHandler {
 			rects.get(0).fireEvent(null);
 		}
 		notifyRectsStateChanged();
+	}
+
+	public String getNameForRect(Rect rect) {
+		if (Model.getInstance().getGroupType() == PageGroup.GROUP_TYPE_INDIVIDUAL) {
+			return String.valueOf(this.rectsInsertionOrder.indexOf(rect) + 1);
+		} else {
+			return String.valueOf(this.getIndexOf(rect) + 1);
+		}
 	}
 }
