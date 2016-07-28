@@ -33,13 +33,16 @@ import java.util.Properties;
 import java.util.Vector;
 
 import javax.imageio.ImageIO;
+import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
+import javax.swing.Action;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
@@ -976,13 +979,28 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JToggleButton getButtonDraw() {
 		if (buttonDraw == null) {
 			buttonDraw = new JToggleButton("Draw", true); // selected initially
-			setButton(buttonDraw, "/draw.png", "Draw an area for cropping.", true);
+			setButton(buttonDraw, "/draw.png", "Draw an area for cropping (Shortcut: D)", true);
 			setToggleButtonGroup(buttonDraw, rectButtonGroup);
-			buttonDraw.addActionListener(new java.awt.event.ActionListener() {
+			
+			final Action action = new AbstractAction() {
+
 				public void actionPerformed(java.awt.event.ActionEvent e) {
 					uiHandler.setEditingMode(UIHandler.EDIT_MODE_DRAW);
 				}
+			};
+			
+			//button action listner
+			buttonDraw.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					action.actionPerformed(e);
+				}
 			});
+			
+			//keyboard shortcut to C
+			String key = "DRAW";
+			buttonDraw.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+			        KeyStroke.getKeyStroke(KeyEvent.VK_D, 0), key);
+			buttonDraw.getActionMap().put(key, action);
 		}
 		return buttonDraw;
 	}
@@ -995,13 +1013,28 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JToggleButton getButtonSelect() {
 		if (buttonSelect == null) {
 			buttonSelect = new JToggleButton("Select");
-			setButton(buttonSelect, "/select.png", "Select and resize an already created crop area.", true);
+			setButton(buttonSelect, "/select.png", "Select and resize an already created crop area.(Shortcut: S)", true);
 			setToggleButtonGroup(buttonSelect, rectButtonGroup);
-			buttonSelect.addActionListener(new java.awt.event.ActionListener() {
+			
+			final Action action = new AbstractAction() {
+
 				public void actionPerformed(java.awt.event.ActionEvent e) {
 					uiHandler.setEditingMode(UIHandler.EDIT_MODE_SELECT);
 				}
+			};
+			
+			//button action listner
+			buttonSelect.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					action.actionPerformed(e);
+				}
 			});
+			
+			//keyboard shortcut to C
+			String key = "SELECT";
+			buttonSelect.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+			        KeyStroke.getKeyStroke(KeyEvent.VK_S, 0), key);
+			buttonSelect.getActionMap().put(key, action);
 		}
 		return buttonSelect;
 	}
