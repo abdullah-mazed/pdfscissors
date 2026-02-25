@@ -43,11 +43,14 @@ public class TaskCheckUpdate extends SwingWorker<UpdateInfo, Void> {
 	protected void done() {
 		try {
 			UpdateInfo info = get();
+			System.out.println("UpdateCheck: tag=" + (info != null ? info.tagName : "null")
+				+ " current=" + AppVersion.CURRENT
+				+ " isNewer=" + (info != null && AppVersion.isNewer(AppVersion.CURRENT, info.tagName)));
 			if (info != null && AppVersion.isNewer(AppVersion.CURRENT, info.tagName)) {
 				firePropertyChange("latestRelease", null, info);
 			}
 		} catch (Exception e) {
-			// network / timeout -- silently ignore; update check is best-effort
+			System.out.println("UpdateCheck error: " + e);
 		}
 	}
 

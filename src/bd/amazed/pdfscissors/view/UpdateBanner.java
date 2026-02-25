@@ -5,15 +5,20 @@ import bd.amazed.pdfscissors.model.UpdateInfo;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Desktop;
 import java.awt.FlowLayout;
+import java.awt.Insets;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
@@ -65,14 +70,42 @@ public class UpdateBanner extends JPanel {
 	private void startDownload() {
 		TaskDownloadUpdate task = new TaskDownloadUpdate(info.getPlatformUrl());
 
-		StackViewCreationDialog progress = new StackViewCreationDialog(owner);
-		progress.setTitle("Downloading update...");
-		progress.setModal(true);
-		progress.enableProgress(task, e -> task.cancel(true));
+		// Simple progress dialog
+		JDialog progress = new JDialog(owner, "Downloading update...", true);
+		JProgressBar bar = new JProgressBar(0, 100);
+		bar.setStringPainted(true);
+		bar.setString("Connecting...");
+		JButton cancelBtn = new JButton("Cancel");
+		cancelBtn.addActionListener(e -> task.cancel(true));
+
+		JPanel content = new JPanel(new BorderLayout(8, 8));
+		content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+		content.add(new JLabel("Downloading PDF Scissors " + info.displayVersion() + "..."), BorderLayout.NORTH);
+		content.add(bar, BorderLayout.CENTER);
+		JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+		btnPanel.add(cancelBtn);
+		content.add(btnPanel, BorderLayout.SOUTH);
+
+		progress.setContentPane(content);
+		progress.pack();
+		progress.setResizable(false);
+
+		task.addPropertyChangeListener(new PropertyChangeListener() {
+			@Override
+			public void propertyChange(PropertyChangeEvent evt) {
+				if ("progress".equals(evt.getPropertyName())) {
+					bar.setValue((Integer) evt.getNewValue());
+				} else if ("message".equals(evt.getPropertyName())) {
+					bar.setString((String) evt.getNewValue());
+				} else if ("done".equals(evt.getPropertyName())) {
+					progress.dispose();
+				}
+			}
+		});
 
 		task.execute();
 		progress.setLocationRelativeTo(owner);
-		progress.setVisible(true);  // blocks until enableProgress disposes it on "done"
+		progress.setVisible(true);  // blocks until "done" fires dispose()
 
 		handleDownloadDone(task);
 	}

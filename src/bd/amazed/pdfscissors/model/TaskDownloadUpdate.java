@@ -48,7 +48,7 @@ public class TaskDownloadUpdate extends SwingWorker<File, Void> {
 				if (total > 0) {
 					setProgress((int)(received * 100L / total));
 					firePropertyChange("message", null,
-						"Downloading... " + (received / 1024) + " KB / " + (total / 1024) + " KB");
+						String.format("Downloading... %.1f MB / %.1f MB", received / 1048576.0, total / 1048576.0));
 				}
 			}
 		}
