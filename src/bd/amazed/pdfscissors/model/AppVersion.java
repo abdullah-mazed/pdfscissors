@@ -2,7 +2,7 @@ package bd.amazed.pdfscissors.model;
 
 public final class AppVersion {
 	/** Must match the git tag being pushed (without 'v'), e.g. "1.0.1". */
-	public static final String CURRENT = "1.0.2";
+	public static final String CURRENT = "1.0.3";
 
 	private AppVersion() {}
 
