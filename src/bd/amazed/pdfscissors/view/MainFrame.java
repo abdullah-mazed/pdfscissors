@@ -70,7 +70,9 @@ import bd.amazed.pdfscissors.model.PdfFile;
 import bd.amazed.pdfscissors.model.RectChangeListener;
 import bd.amazed.pdfscissors.model.TaskPdfOpen;
 import bd.amazed.pdfscissors.model.TaskPdfSave;
+import bd.amazed.pdfscissors.model.TaskCheckUpdate;
 import bd.amazed.pdfscissors.model.TempFileManager;
+import bd.amazed.pdfscissors.model.UpdateInfo;
 
 /**
  * @author Gagan
@@ -113,6 +115,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JButton buttonSplitHorizontal = null;
 	private JButton buttonSplitVertical = null;
 	private JPanel bottomPanel;
+	private UpdateBanner updateBanner = null;
 	private JComboBox pageSelectionCombo = null;
 	private JMenuBar jJMenuBar = null;
 	private JMenu menuFile = null;
@@ -178,10 +181,17 @@ public class MainFrame extends JFrame implements ModelListener {
 				super.windowClosing(e);
 
 				storeWindowPosition();//rusaa MOD: store for next execution
-				
+
 				Model.getInstance().close();
 				getDefaultPdfPanel().closePdfFile(); // TODO may be implement a better way to notify to close
 				TempFileManager.getInstance().clean();
+			}
+		});
+
+		addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowOpened(WindowEvent e) {
+				scheduleUpdateCheck();
 			}
 		});
 	}
@@ -633,6 +643,35 @@ public class MainFrame extends JFrame implements ModelListener {
 
 	private void debug(String string) {
 		System.out.println("MainFrame: " + string);
+	}
+
+	private void scheduleUpdateCheck() {
+		TaskCheckUpdate task = new TaskCheckUpdate();
+		task.addPropertyChangeListener(new PropertyChangeListener() {
+			@Override
+			public void propertyChange(PropertyChangeEvent evt) {
+				if ("latestRelease".equals(evt.getPropertyName()) && evt.getNewValue() != null) {
+					showUpdateBanner((UpdateInfo) evt.getNewValue());
+				}
+			}
+		});
+		task.execute();
+	}
+
+	private void showUpdateBanner(UpdateInfo info) {
+		if (updateBanner != null) return;  // already showing
+		updateBanner = new UpdateBanner(this, info);
+
+		// jContentPane uses BorderLayout; toolBar is at NORTH.
+		// Wrap both banner (top) and toolbar (below) in a new north panel.
+		JPanel northWrapper = new JPanel(new BorderLayout());
+		northWrapper.add(updateBanner, BorderLayout.NORTH);
+		northWrapper.add(toolBar, BorderLayout.CENTER);
+
+		jContentPane.remove(toolBar);
+		jContentPane.add(northWrapper, BorderLayout.NORTH);
+		jContentPane.revalidate();
+		jContentPane.repaint();
 	}
 
 	private void handleException(String userFriendlyMessage, Throwable ex) {
