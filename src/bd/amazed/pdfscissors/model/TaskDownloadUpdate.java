@@ -33,7 +33,7 @@ public class TaskDownloadUpdate extends SwingWorker<File, Void> {
 		long total = conn.getContentLengthLong();
 		String path = new URL(downloadUrl).getPath();
 		String name = path.substring(path.lastIndexOf('/') + 1);
-		File target = new File(System.getProperty("java.io.tmpdir"), name);
+		File target = resolveDownloadTarget(name);
 
 		firePropertyChange("message", null, "Downloading " + name + "...");
 
@@ -54,6 +54,14 @@ public class TaskDownloadUpdate extends SwingWorker<File, Void> {
 		}
 		setProgress(100);
 		return target;
+	}
+
+	private static File resolveDownloadTarget(String name) {
+		File downloads = new File(System.getProperty("user.home"), "Downloads");
+		if (downloads.isDirectory() && downloads.canWrite()) {
+			return new File(downloads, name);
+		}
+		return new File(System.getProperty("java.io.tmpdir"), name);
 	}
 
 	@Override
