@@ -64,19 +64,35 @@ jobs:
           name: jars
           path: jars
 
+      - name: Convert icon (macOS)
+        if: runner.os == 'macOS'
+        run: sips -s format icns jars/res/icon.png --out icon.icns
+
+      - name: Convert icon (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: magick convert jars/res/icon.png icon.ico
+
       - name: Package
         shell: bash
         run: |
           mkdir -p package-input dist-package
           cp jars/dist/pdfscissors.jar package-input/
           cp jars/lib/*.jar package-input/
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            ICON="icon.icns"
+          elif [ "$RUNNER_OS" = "Windows" ]; then
+            ICON="icon.ico"
+          else
+            ICON="jars/res/icon.png"
+          fi
           jpackage \
             --input package-input \
             --main-jar pdfscissors.jar \
             --main-class bd.amazed.pdfscissors.main.PdfscissorsMain \
             --name PDFScissors \
             --app-version 1.0.0 \
-            --icon jars/res/icon.png \
+            --icon "$ICON" \
             --type ${{ matrix.type }} \
             --dest dist-package
 
