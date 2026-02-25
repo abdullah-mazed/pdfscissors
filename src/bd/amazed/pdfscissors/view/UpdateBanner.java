@@ -124,15 +124,31 @@ public class UpdateBanner extends JPanel {
 			return;
 		}
 
+		// 1. Try to open/run the installer directly
 		try {
 			Desktop.getDesktop().open(installer);
 			System.exit(0);
-		} catch (IOException ex) {
+			return;
+		} catch (Exception ex) { /* fall through */ }
+
+		// 2. Try to open the containing folder so the user can run it
+		try {
+			Desktop.getDesktop().open(installer.getParentFile());
 			JOptionPane.showMessageDialog(owner,
-				"Installer downloaded but could not be launched automatically.\n\n"
-				+ "Please open it manually:\n" + installer.getAbsolutePath(),
+				"The installer could not be launched automatically.\n\n"
+				+ "The folder containing the installer has been opened.\n"
+				+ "Please double-click the file to install:\n"
+				+ installer.getName(),
 				"Manual installation required", JOptionPane.INFORMATION_MESSAGE);
-		}
+			return;
+		} catch (Exception ex) { /* fall through */ }
+
+		// 3. Show manual instructions
+		JOptionPane.showMessageDialog(owner,
+			"The installer was downloaded but could not be opened automatically.\n\n"
+			+ "Please navigate to the following location and run the installer manually:\n"
+			+ installer.getAbsolutePath(),
+			"Manual installation required", JOptionPane.INFORMATION_MESSAGE);
 	}
 
 	public void dismiss() {
