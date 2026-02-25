@@ -11,7 +11,7 @@ javac -cp "$LIB" -d bin @sources.txt
 rm sources.txt
 
 echo "Copying resources..."
-cp -r res bin/
+cp -r res/. bin/
 
 echo "Packaging JAR..."
 mkdir -p dist
