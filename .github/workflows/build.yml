@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [ master, main, workflow-test ]
+    branches: [ '**' ]
     tags:
       - 'v*'
   pull_request:
@@ -100,6 +100,10 @@ jobs:
           else
             ICON="jars/res/icon.png"
           fi
+          WIN_ARGS=""
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            WIN_ARGS="--win-shortcut --win-menu --win-menu-group PDFScissors"
+          fi
           jpackage \
             --input package-input \
             --main-jar pdfscissors.jar \
@@ -108,7 +112,8 @@ jobs:
             --app-version "$VERSION" \
             --icon "$ICON" \
             --type ${{ matrix.type }} \
-            --dest dist-package
+            --dest dist-package \
+            $WIN_ARGS
 
       - name: Upload package
         uses: actions/upload-artifact@v4
