@@ -13,23 +13,75 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 11
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '11'
+          java-version: '17'
           distribution: 'temurin'
 
-      - name: Build
+      - name: Compile
         run: |
           chmod +x build.sh
           ./build.sh
 
-      - name: Upload artifact
+      - name: Upload JARs
         uses: actions/upload-artifact@v4
         with:
-          name: pdfscissors
+          name: jars
           path: |
             dist/pdfscissors.jar
             lib/itextpdf-5.5.9.jar
             lib/jgoodies-forms-1.10.jar
             lib/jpedal-4.37b36.jar
+            res/icon.png
+
+  package:
+    needs: build
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            label: linux
+            type: deb
+          - os: macos-latest
+            label: macos
+            type: dmg
+          - os: windows-latest
+            label: windows
+            type: msi
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Download JARs
+        uses: actions/download-artifact@v4
+        with:
+          name: jars
+          path: jars
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p package-input dist-package
+          cp jars/dist/pdfscissors.jar package-input/
+          cp jars/lib/*.jar package-input/
+          jpackage \
+            --input package-input \
+            --main-jar pdfscissors.jar \
+            --main-class bd.amazed.pdfscissors.main.PdfscissorsMain \
+            --name PDFScissors \
+            --app-version 1.0.0 \
+            --icon jars/res/icon.png \
+            --type ${{ matrix.type }} \
+            --dest dist-package
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdfscissors-${{ matrix.label }}
+          path: dist-package/
