@@ -38,6 +38,8 @@ import javax.swing.ButtonGroup;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
+import javax.swing.Icon;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -426,7 +428,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JButton getButtonOpenDefault() {
 		if (jButton == null) {
 			jButton = new JButton("Open"); // a string literal is here only for eclipse visual editor.
-			String imageFile = "/open.png";
+			String imageFile = "/icons/open.svg";
 			String text = "Open a PDF file";
 			setButton(jButton, imageFile, text, false);
 			jButton.addActionListener(new java.awt.event.ActionListener() {
@@ -447,7 +449,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JButton getButtonOpenQuick() {
 		if (buttonOpenExtended == null) {
 			buttonOpenExtended = new JButton("Quick Open"); // a string literal is here only for eclipse visual editor.
-			String imageFile = "/openQuick.png";
+			String imageFile = "/icons/open-quick.svg";
 			String text = "Quick Open a PDF file";
 			setButton(buttonOpenExtended, imageFile, text, false);
 			buttonOpenExtended.addActionListener(new java.awt.event.ActionListener() {
@@ -461,14 +463,21 @@ public class MainFrame extends JFrame implements ModelListener {
 	}
 
 	private void setButton(AbstractButton button, String imageLocation, String tooltip, boolean isOpenFileDependent) {
-		String imgLocation = imageLocation;
-		URL imageURL = MainFrame.class.getResource(imageLocation);
-		if (imageURL != null) { // image found
-			button.setIcon(new ImageIcon(imageURL, tooltip));
+		Icon icon = null;
+		if (imageLocation.endsWith(".svg")) {
+			icon = new FlatSVGIcon(imageLocation.substring(1), 20, 20);
+		} else {
+			URL imageURL = MainFrame.class.getResource(imageLocation);
+			if (imageURL != null) {
+				icon = new ImageIcon(imageURL, tooltip);
+			}
+		}
+		if (icon != null) {
+			button.setIcon(icon);
 			button.setText(null);
-		} else { // no image found
+		} else {
 			button.setText(tooltip);
-			System.err.println("Resource not found: " + imgLocation);
+			System.err.println("Resource not found: " + imageLocation);
 		}
 		button.setToolTipText(tooltip);
 		button.setActionCommand(tooltip);
@@ -730,7 +739,7 @@ public class MainFrame extends JFrame implements ModelListener {
 			JPanel pnlRectEditor = new JPanel();
 			
 			JLabel l = new JLabel();
-			l.setIcon(new ImageIcon(MainFrame.class.getResource("/draw.png"), "edit current selection"));
+			l.setIcon(new FlatSVGIcon("icons/draw.svg", 16, 16));
 			pnlRectEditor.add(l);
 			
 			NumberFormat format = NumberFormat.getNumberInstance();
@@ -902,7 +911,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JButton getButtonSave() {
 		if (buttonSave == null) {
 			buttonSave = new JButton("Save");
-			setButton(buttonSave, "/crop.png", "Crop and save to another PDF", true);
+			setButton(buttonSave, "/icons/crop.svg", "Crop and save to another PDF", true);
 			buttonSave.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
 					saveFile();
@@ -922,7 +931,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JButton getButtonSaveCurrent() {
 		if (buttonSaveCurrent == null) {
 			buttonSaveCurrent = new JButton("Save Current");
-			setButton(buttonSaveCurrent, "/cropCurrent.png", "Crop current selection and save to another PDF", true);
+			setButton(buttonSaveCurrent, "/icons/crop-current.svg", "Crop current selection and save to another PDF", true);
 			buttonSaveCurrent.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
 					saveFile(true);
@@ -1021,7 +1030,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JToggleButton getButtonDraw() {
 		if (buttonDraw == null) {
 			buttonDraw = new JToggleButton("Draw", true); // selected initially
-			setButton(buttonDraw, "/draw.png", "Draw an area for cropping.", true);
+			setButton(buttonDraw, "/icons/draw.svg", "Draw an area for cropping.", true);
 			setToggleButtonGroup(buttonDraw, rectButtonGroup);
 			buttonDraw.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
@@ -1040,7 +1049,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JToggleButton getButtonSelect() {
 		if (buttonSelect == null) {
 			buttonSelect = new JToggleButton("Select");
-			setButton(buttonSelect, "/select.png", "Select and resize an already created crop area.", true);
+			setButton(buttonSelect, "/icons/select.svg", "Select and resize an already created crop area.", true);
 			setToggleButtonGroup(buttonSelect, rectButtonGroup);
 			buttonSelect.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
@@ -1059,7 +1068,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JButton getButtonDeleteRect() {
 		if (buttonDeleteRect == null) {
 			buttonDeleteRect = new JButton("Delete");
-			setButton(buttonDeleteRect, "/del.png", "Delete selected crop area", true);
+			setButton(buttonDeleteRect, "/icons/del.svg", "Delete selected crop area", true);
 			buttonDeleteRect.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
 					if (uiHandler.getSelectedRect() != null) {
@@ -1083,7 +1092,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JButton getButtonDelAll() {
 		if (buttonDelAll == null) {
 			buttonDelAll = new JButton("Delete All");
-			setButton(buttonDelAll, "/delAll.png", "Delete all crop areas.", true);
+			setButton(buttonDelAll, "/icons/del-all.svg", "Delete all crop areas.", true);
 			buttonDelAll.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
 					if (uiHandler.getRectCount() <= 0) {
@@ -1106,7 +1115,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JButton getButtonEqualWidth() {
 		if (buttonEqualWidth == null) {
 			buttonEqualWidth = new JButton("Equal Width");
-			setButton(buttonEqualWidth, "/sameWidth.png", "Set width of all areas same.", true);
+			setButton(buttonEqualWidth, "/icons/same-width.svg", "Set width of all areas same.", true);
 			buttonEqualWidth.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
 					if (uiHandler.getRectCount() > 0) {
@@ -1128,7 +1137,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JButton getButtonEqualHeight() {
 		if (buttonEqualHeight == null) {
 			buttonEqualHeight = new JButton("Equal Height");
-			setButton(buttonEqualHeight, "/sameHeight.png", "Set Heights of crop areas same", true);
+			setButton(buttonEqualHeight, "/icons/same-height.svg", "Set Heights of crop areas same", true);
 			buttonEqualHeight.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
 					if (uiHandler.getRectCount() > 0) {
@@ -1145,7 +1154,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JButton getButtonSplitHorizontal() {
 		if (buttonSplitHorizontal == null) {
 			buttonSplitHorizontal = new JButton("Split Horizontal");
-			setButton(buttonSplitHorizontal, "/splitHorizontal.png", "Split area in two equals horizontal areas", true);
+			setButton(buttonSplitHorizontal, "/icons/split-h.svg", "Split area in two equals horizontal areas", true);
 			buttonSplitHorizontal.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
 					if (uiHandler.getSelectedRect() != null) {
@@ -1164,7 +1173,7 @@ public class MainFrame extends JFrame implements ModelListener {
 	private JButton getButtonSplitVertical() {
 		if (buttonSplitVertical == null) {
 			buttonSplitVertical = new JButton("Split Vertical");
-			setButton(buttonSplitVertical, "/splitVertical.png", "Split area in two equals vertical areas", true);
+			setButton(buttonSplitVertical, "/icons/split-v.svg", "Split area in two equals vertical areas", true);
 			buttonSplitVertical.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
 					if (uiHandler.getSelectedRect() != null) {

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-LIB="lib/itextpdf-5.5.9.jar:lib/jgoodies-forms-1.10.jar:lib/jpedal-4.37b36.jar"
+LIB="lib/itextpdf-5.5.9.jar:lib/jgoodies-forms-1.10.jar:lib/jpedal-4.37b36.jar:lib/flatlaf-3.5.4.jar:lib/flatlaf-extras-3.5.4.jar:lib/jsvg-1.4.0.jar"
 MAIN_CLASS="bd.amazed.pdfscissors.main.PdfscissorsMain"
 
 echo "Compiling..."

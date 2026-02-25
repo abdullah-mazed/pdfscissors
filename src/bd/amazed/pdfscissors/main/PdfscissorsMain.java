@@ -14,7 +14,9 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
+
+import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.FlatDarkLaf;
 
 import bd.amazed.pdfscissors.model.Model;
 import bd.amazed.pdfscissors.view.MainFrame;
@@ -108,16 +110,42 @@ public class PdfscissorsMain {
 
 	private static void setLookAndFeel() {
 		try {
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (ClassNotFoundException ex) {
-			Logger.getLogger(PdfscissorsMain.class.getName()).log(Level.SEVERE, null, ex);
-		} catch (InstantiationException ex) {
-			Logger.getLogger(PdfscissorsMain.class.getName()).log(Level.SEVERE, null, ex);
-		} catch (IllegalAccessException ex) {
-			Logger.getLogger(PdfscissorsMain.class.getName()).log(Level.SEVERE, null, ex);
-		} catch (UnsupportedLookAndFeelException ex) {
-			Logger.getLogger(PdfscissorsMain.class.getName()).log(Level.SEVERE, null, ex);
+			if (isSystemDark()) {
+				FlatDarkLaf.setup();
+			} else {
+				FlatLightLaf.setup();
+			}
+		} catch (Exception ex) {
+			try {
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			} catch (Exception e) { /* ignore */ }
 		}
+	}
+
+	private static boolean isSystemDark() {
+		String os = System.getProperty("os.name", "").toLowerCase();
+		try {
+			if (os.contains("mac")) {
+				Process p = Runtime.getRuntime().exec(new String[]{"defaults", "read", "-g", "AppleInterfaceStyle"});
+				java.util.Scanner sc = new java.util.Scanner(p.getInputStream());
+				String val = sc.hasNextLine() ? sc.nextLine().trim() : "";
+				return "Dark".equalsIgnoreCase(val);
+			} else if (os.contains("win")) {
+				Process p = Runtime.getRuntime().exec(new String[]{
+					"reg", "query",
+					"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+					"/v", "AppsUseLightTheme"
+				});
+				java.util.Scanner sc = new java.util.Scanner(p.getInputStream());
+				while (sc.hasNextLine()) {
+					String line = sc.nextLine();
+					if (line.contains("AppsUseLightTheme")) {
+						return line.trim().endsWith("0x0");
+					}
+				}
+			}
+		} catch (Exception e) { /* ignore */ }
+		return false;
 	}
 
 }
